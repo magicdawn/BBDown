@@ -1,6 +1,6 @@
-﻿using BBDown.Core.Entity;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.RegularExpressions;
+using BBDown.Core.Entity;
 using static BBDown.Core.Entity.Entity;
 using static BBDown.Core.Util.HTTPUtil;
 
@@ -13,8 +13,11 @@ namespace BBDown.Core.Fetcher
             id = id[3..];
             string index = "";
             //string api = $"https://api.global.bilibili.com/intl/gateway/ogv/m/view?ep_id={id}";
-            string api = "https://" + (Config.HOST == "api.bilibili.com" ? "api.bilibili.tv" : Config.HOST) +
-            $"/intl/gateway/v2/ogv/view/app/season?ep_id={id}&platform=android&s_locale=zh_SG&mobi_app=bstar_a" + (Config.TOKEN != "" ? $"&access_key={Config.TOKEN}" : "");
+            string api =
+                "https://"
+                + (Config.HOST == "api.bilibili.com" ? "api.bilibili.tv" : Config.HOST)
+                + $"/intl/gateway/v2/ogv/view/app/season?ep_id={id}&platform=android&s_locale=zh_SG&mobi_app=bstar_a"
+                + (Config.TOKEN != "" ? $"&access_key={Config.TOKEN}" : "");
             string json = (await GetWebSourceAsync(api)).Replace("\\/", "/");
             using var infoJson = JsonDocument.Parse(json);
             var result = infoJson.RootElement.GetProperty("result");
@@ -22,7 +25,6 @@ namespace BBDown.Core.Fetcher
             string cover = result.GetProperty("cover").ToString();
             string title = result.GetProperty("title").ToString();
             string desc = result.GetProperty("evaluate").ToString();
-
 
             if (cover == "")
             {
@@ -40,7 +42,9 @@ namespace BBDown.Core.Fetcher
             }
 
             string pubTimeStr = result.GetProperty("publish").GetProperty("pub_time").ToString();
-            long pubTime = string.IsNullOrEmpty(pubTimeStr) ? 0 : DateTimeOffset.ParseExact(pubTimeStr, "yyyy-MM-dd HH:mm:ss", null).ToUnixTimeSeconds();
+            long pubTime = string.IsNullOrEmpty(pubTimeStr)
+                ? 0
+                : DateTimeOffset.ParseExact(pubTimeStr, "yyyy-MM-dd HH:mm:ss", null).ToUnixTimeSeconds();
             var pages = new List<JsonElement>();
             if (result.TryGetProperty("episodes", out JsonElement episodes))
             {
@@ -85,26 +89,34 @@ namespace BBDown.Core.Fetcher
             foreach (var page in pages)
             {
                 //跳过预告
-                if (page.TryGetProperty("badge", out JsonElement badge) && badge.ToString() == "预告") continue;
+                if (page.TryGetProperty("badge", out JsonElement badge) && badge.ToString() == "预告")
+                    continue;
                 string res = "";
                 try
                 {
-                    res = page.GetProperty("dimension").GetProperty("width").ToString() + "x" + page.GetProperty("dimension").GetProperty("height").ToString();
+                    res =
+                        page.GetProperty("dimension").GetProperty("width").ToString()
+                        + "x"
+                        + page.GetProperty("dimension").GetProperty("height").ToString();
                 }
                 catch (Exception) { }
                 string _title = page.GetProperty("title").ToString() + " " + page.GetProperty("long_title").ToString();
                 _title = _title.Trim();
-                Page p = new(i++,
-                    page.GetProperty("aid").ToString(),
-                    page.GetProperty("cid").ToString(),
-                    page.GetProperty("id").ToString(),
-                    _title,
-                    0, res,
-                    page.TryGetProperty("pub_time", out JsonElement pub_time) ? pub_time.GetInt64() : 0);
-                if (p.epid == id) index = p.index.ToString();
+                Page p =
+                    new(
+                        i++,
+                        page.GetProperty("aid").ToString(),
+                        page.GetProperty("cid").ToString(),
+                        page.GetProperty("id").ToString(),
+                        _title,
+                        0,
+                        res,
+                        page.TryGetProperty("pub_time", out JsonElement pub_time) ? pub_time.GetInt64() : 0
+                    );
+                if (p.epid == id)
+                    index = p.index.ToString();
                 pagesInfo.Add(p);
             }
-
 
             var info = new VInfo
             {
@@ -115,7 +127,7 @@ namespace BBDown.Core.Fetcher
                 PagesInfo = pagesInfo,
                 IsBangumi = true,
                 IsCheese = true,
-                Index = index
+                Index = index,
             };
 
             return info;

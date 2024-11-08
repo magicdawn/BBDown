@@ -1,17 +1,17 @@
-﻿using static BBDown.Core.Logger;
-using System.Text;
+﻿using System.Text;
 using System.Xml;
+using static BBDown.Core.Logger;
 
 namespace BBDown.Core
 {
     public class DanmakuUtil
     {
-        private const int MONITOR_WIDTH = 1920;         //渲染字幕时的渲染范围的高度
-        private const int MONITOR_HEIGHT = 1080;        //渲染字幕时的渲染范围的高度
-        private const int FONT_SIZE = 40;               //字体大小
-        private const double MOVE_SPEND_TIME = 8.00;    //单条条滚动弹幕存在时间（控制速度）
-        private const double TOP_SPEND_TIME = 4.00;     //单条顶部或底部弹幕存在时间
-        private const int PROTECT_LENGTH = 50;          //滚动弹幕屏占百分比
+        private const int MONITOR_WIDTH = 1920; //渲染字幕时的渲染范围的高度
+        private const int MONITOR_HEIGHT = 1080; //渲染字幕时的渲染范围的高度
+        private const int FONT_SIZE = 40; //字体大小
+        private const double MOVE_SPEND_TIME = 8.00; //单条条滚动弹幕存在时间（控制速度）
+        private const double TOP_SPEND_TIME = 4.00; //单条顶部或底部弹幕存在时间
+        private const int PROTECT_LENGTH = 50; //滚动弹幕屏占百分比
         public static readonly DanmakuComparer comparer = new();
 
         /*public static async Task DownloadAsync(Page p, string xmlPath, bool aria2c, string aria2cProxy)
@@ -24,13 +24,16 @@ namespace BBDown.Core
         {
             // 解析xml文件
             XmlDocument xmlFile = new();
-            XmlReaderSettings settings = new()
-            {
-                IgnoreComments = true//忽略文档里面的注释
-            };
+            XmlReaderSettings settings =
+                new()
+                {
+                    IgnoreComments =
+                        true //忽略文档里面的注释
+                    ,
+                };
             var danmakus = new List<DanmakuItem>();
             using (var reader = XmlReader.Create(xmlPath, settings))
-			{
+            {
                 try
                 {
                     xmlFile.Load(reader);
@@ -39,7 +42,7 @@ namespace BBDown.Core
                 {
                     LogDebug("解析字幕xml时出现异常: {0}", ex.ToString());
                     return null;
-				}
+                }
             }
 
             XmlNode? rootNode = xmlFile.SelectSingleNode("i");
@@ -89,17 +92,22 @@ namespace BBDown.Core
             sb.AppendLine("ScaledBorderAndShadow: yes");
             sb.AppendLine("YCbCr Matrix: TV.601");
             sb.AppendLine("[V4+ Styles]");
-            sb.AppendLine("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding");
-            sb.AppendLine($"Style: BBDOWN_Style, 黑体, {FONT_SIZE}, &H00FFFFFF, &H00FFFFFF, &H00000000, &H00000000, 0, 0, 0, 0, 100, 100, 0.00, 0.00, 1, 2, 0, 7, 0, 0, 0, 0");
+            sb.AppendLine(
+                "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
+            );
+            sb.AppendLine(
+                $"Style: BBDOWN_Style, 黑体, {FONT_SIZE}, &H00FFFFFF, &H00FFFFFF, &H00000000, &H00000000, 0, 0, 0, 0, 100, 100, 0.00, 0.00, 1, 2, 0, 7, 0, 0, 0, 0"
+            );
             sb.AppendLine("[Events]");
             sb.AppendLine("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text");
-            
-            PositionController controller = new();   // 弹幕位置控制器
+
+            PositionController controller = new(); // 弹幕位置控制器
             Array.Sort(danmakus, comparer);
             foreach (DanmakuItem danmaku in danmakus)
             {
                 int height = controller.UpdatePosition(danmaku.DanmakuMode, danmaku.Second, danmaku.Content.Length);
-                if (height == -1) continue;
+                if (height == -1)
+                    continue;
                 string effect = "";
                 effect += danmaku.DanmakuMode switch
                 {
@@ -111,7 +119,9 @@ namespace BBDown.Core
                 {
                     effect += $"\\c&{danmaku.Color}&";
                 }
-                sb.AppendLine($"Dialogue: 2,{danmaku.StartTime},{danmaku.EndTime},BBDOWN_Style,,0000,0000,0000,,{{{effect}}}{danmaku.Content}");
+                sb.AppendLine(
+                    $"Dialogue: 2,{danmaku.StartTime},{danmaku.EndTime},BBDOWN_Style,,0000,0000,0000,,{{{effect}}}{danmaku.Content}"
+                );
             }
 
             await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8);
@@ -119,8 +129,9 @@ namespace BBDown.Core
 
         protected class PositionController
         {
-            readonly int maxLine = MONITOR_HEIGHT * PROTECT_LENGTH / FONT_SIZE / 100;    //总行数
-                                                                                        // 三个位置的弹幕队列，记录弹幕结束时间
+            readonly int maxLine = MONITOR_HEIGHT * PROTECT_LENGTH / FONT_SIZE / 100; //总行数
+
+            // 三个位置的弹幕队列，记录弹幕结束时间
 
             readonly List<double> moveQueue = new();
             readonly List<double> topQueue = new();
@@ -152,12 +163,13 @@ namespace BBDown.Core
                 else
                 {
                     vs = moveQueue;
-                    displayTime = MOVE_SPEND_TIME * (length + 5) * FONT_SIZE / (MONITOR_WIDTH + (length * MOVE_SPEND_TIME));
+                    displayTime =
+                        MOVE_SPEND_TIME * (length + 5) * FONT_SIZE / (MONITOR_WIDTH + (length * MOVE_SPEND_TIME));
                 }
                 for (int i = 0; i < maxLine; i++)
                 {
                     if (time >= vs[i])
-                    {   // 此条弹幕已结束，更新该位置信息
+                    { // 此条弹幕已结束，更新该位置信息
                         vs[i] = time + displayTime;
                         return i * FONT_SIZE;
                     }
@@ -200,6 +212,7 @@ namespace BBDown.Core
                 Timestamp = attrs[4];
                 Content = content;
             }
+
             private static string ComputeTime(double second)
             {
                 int hour = (int)second / 3600;
@@ -207,19 +220,27 @@ namespace BBDown.Core
                 second -= (hour * 3600) + (minute * 60);
                 return hour.ToString() + string.Format(":{0:D2}:", minute) + string.Format("{0:00.00}", second);
             }
+
             public string Content { get; set; } = "";
+
             // 弹幕内容
             public string StartTime { get; set; } = "";
+
             // 出现时间
             public double Second { get; set; } = 0.00;
+
             // 出现时间（秒为单位）
             public string EndTime { get; set; } = "";
+
             // 消失时间
             public int DanmakuMode { get; set; } = POS_MOVE;
+
             // 弹幕类型
             public string FontSize { get; set; } = "";
+
             // 字号
             public string Color { get; set; } = "";
+
             // 颜色
             public string Timestamp { get; set; } = "";
             // 时间戳
@@ -229,14 +250,16 @@ namespace BBDown.Core
         {
             public int Compare(DanmakuItem? x, DanmakuItem? y)
             {
-                if (x == null) return -1;
-                if (y == null) return 1;
+                if (x == null)
+                    return -1;
+                if (y == null)
+                    return 1;
                 return x.Second.CompareTo(y.Second);
             }
         }
 
-        private const int POS_MOVE = 1;     //滚动弹幕
-        private const int POS_TOP = 2;      //顶部弹幕
-        private const int POS_BOTTOM = 3;   //底部弹幕
+        private const int POS_MOVE = 1; //滚动弹幕
+        private const int POS_TOP = 2; //顶部弹幕
+        private const int POS_BOTTOM = 3; //底部弹幕
     }
 }

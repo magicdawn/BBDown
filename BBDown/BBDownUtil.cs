@@ -50,7 +50,8 @@ namespace BBDown
                 if (input.Contains("b23.tv"))
                 {
                     string tmp = await GetWebLocationAsync(input);
-                    if (tmp == input) throw new Exception("无限重定向");
+                    if (tmp == input)
+                        throw new Exception("无限重定向");
                     input = tmp;
                 }
                 if (input.Contains("video/av"))
@@ -84,12 +85,20 @@ namespace BBDown
                     string epId = await GetEpIdByBangumiSSIdAsync(SsRegex().Match(input).Groups[1].Value);
                     avid = $"ep:{epId}";
                 }
-                else if (input.Contains("/medialist/") && input.Contains("business_id=") && input.Contains("business=space_collection")) // 列表类型是合集
+                else if (
+                    input.Contains("/medialist/")
+                    && input.Contains("business_id=")
+                    && input.Contains("business=space_collection")
+                ) // 列表类型是合集
                 {
                     string bizId = GetQueryString("business_id", input);
                     avid = $"listBizId:{bizId}";
                 }
-                else if (input.Contains("/medialist/") && input.Contains("business_id=") && input.Contains("business=space_series")) // 列表类型是系列
+                else if (
+                    input.Contains("/medialist/")
+                    && input.Contains("business_id=")
+                    && input.Contains("business=space_series")
+                ) // 列表类型是系列
                 {
                     string bizId = GetQueryString("business_id", input);
                     avid = $"seriesBizId:{bizId}";
@@ -137,7 +146,12 @@ namespace BBDown
                     Regex regex = StateRegex();
                     string json = regex.Match(web).Groups[1].Value;
                     using var jDoc = JsonDocument.Parse(json);
-                    string epId = jDoc.RootElement.GetProperty("epList").EnumerateArray().First().GetProperty("id").ToString();
+                    string epId = jDoc
+                        .RootElement.GetProperty("epList")
+                        .EnumerateArray()
+                        .First()
+                        .GetProperty("id")
+                        .ToString();
                     avid = $"ep:{epId}";
                 }
             }
@@ -193,7 +207,7 @@ namespace BBDown
                 >= 1024 * 1024 * 1024 => string.Format("{0:########0.00} GB", (double)fileSize / (1024 * 1024 * 1024)),
                 >= 1024 * 1024 => string.Format("{0:####0.00} MB", (double)fileSize / (1024 * 1024)),
                 >= 1024 => string.Format("{0:####0.00} KB", (double)fileSize / 1024),
-                _ => string.Format("{0} bytes", fileSize)
+                _ => string.Format("{0} bytes", fileSize),
             };
         }
 
@@ -230,25 +244,42 @@ namespace BBDown
             string api = $"https://api.bilibili.com/pugv/view/web/season?season_id={ssid}";
             string json = await GetWebSourceAsync(api);
             using var jDoc = JsonDocument.Parse(json);
-            string epId = jDoc.RootElement.GetProperty("data").GetProperty("episodes").EnumerateArray().First().GetProperty("id").ToString();
+            string epId = jDoc
+                .RootElement.GetProperty("data")
+                .GetProperty("episodes")
+                .EnumerateArray()
+                .First()
+                .GetProperty("id")
+                .ToString();
             return epId;
         }
 
         private static async Task<string> GetEpIdByBangumiSSIdAsync(string ssId)
-		{
+        {
             string api = $"https://{Core.Config.EPHOST}/pgc/view/web/season?season_id={ssId}";
             string json = await GetWebSourceAsync(api);
             using var jDoc = JsonDocument.Parse(json);
-            string epId = jDoc.RootElement.GetProperty("result").GetProperty("episodes").EnumerateArray().First().GetProperty("id").ToString();
+            string epId = jDoc
+                .RootElement.GetProperty("result")
+                .GetProperty("episodes")
+                .EnumerateArray()
+                .First()
+                .GetProperty("id")
+                .ToString();
             return epId;
         }
 
         private static async Task<string> GetEpIdByMDAsync(string mdId)
-		{
+        {
             string api = $"https://api.bilibili.com/pgc/review/user?media_id={mdId}";
             string json = await GetWebSourceAsync(api);
             using var jDoc = JsonDocument.Parse(json);
-            string epId = jDoc.RootElement.GetProperty("result").GetProperty("media").GetProperty("new_ep").GetProperty("id").ToString();
+            string epId = jDoc
+                .RootElement.GetProperty("result")
+                .GetProperty("media")
+                .GetProperty("new_ep")
+                .GetProperty("id")
+                .ToString();
             return epId;
         }
 
@@ -259,7 +290,8 @@ namespace BBDown
         /// <param name="outputFilePath"></param>
         public static void CombineMultipleFilesIntoSingleFile(string[] files, string outputFilePath)
         {
-            if (!files.Any()) return;
+            if (!files.Any())
+                return;
             if (files.Length == 1)
             {
                 FileInfo fi = new(files[0]);
@@ -307,8 +339,11 @@ namespace BBDown
             return res;
         }
 
-        private static char[] InvalidChars = "34,60,62,124,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,58,42,63,92,47"
-                .Split(',').Select(s => (char)byte.Parse(s)).ToArray();
+        private static char[] InvalidChars =
+            "34,60,62,124,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,58,42,63,92,47"
+                .Split(',')
+                .Select(s => (char)byte.Parse(s))
+                .ToArray();
 
         public static string GetValidFileName(string input, string re = "_", bool filterSlash = false)
         {
@@ -325,7 +360,6 @@ namespace BBDown
             }
             return title;
         }
-
 
         /// <summary>
         /// 获取url字符串参数, 返回参数值字符串
@@ -368,11 +402,11 @@ namespace BBDown
 
         //https://stackoverflow.com/questions/1344221/how-can-i-generate-random-alphanumeric-strings
         private static readonly Random random = new();
+
         public static string GetRandomString(int length)
         {
             const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[random.Next(s.Length)]).ToArray());
+            return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         //https://stackoverflow.com/a/45088333
@@ -441,23 +475,25 @@ namespace BBDown
                         UseShellExecute = false,
                         RedirectStandardError = true,
                         RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    }
+                        CreateNoWindow = true,
+                    },
                 };
                 process.Start();
-                string info = process.StandardOutput.ReadToEnd() + Environment.NewLine + process.StandardError.ReadToEnd();
+                string info =
+                    process.StandardOutput.ReadToEnd() + Environment.NewLine + process.StandardError.ReadToEnd();
                 process.WaitForExit();
                 var match = LibavutilRegex().Match(info);
-                if (!match.Success) return false;
-                if((Convert.ToInt32(match.Groups[1].Value)==57 && Convert.ToInt32(match.Groups[1].Value) >= 17)
-                    || Convert.ToInt32(match.Groups[1].Value) > 57)
+                if (!match.Success)
+                    return false;
+                if (
+                    (Convert.ToInt32(match.Groups[1].Value) == 57 && Convert.ToInt32(match.Groups[1].Value) >= 17)
+                    || Convert.ToInt32(match.Groups[1].Value) > 57
+                )
                 {
                     return true;
                 }
             }
-            catch (Exception)
-            {
-            }
+            catch (Exception) { }
             return false;
         }
 
@@ -479,12 +515,14 @@ namespace BBDown
                 {
                     foreach (var point in vPoint.EnumerateArray())
                     {
-                        ponints.Add(new ViewPoint()
-                        {
-                            title = point.GetProperty("content").GetString()!,
-                            start = int.Parse(point.GetProperty("from").ToString()),
-                            end = int.Parse(point.GetProperty("to").ToString())
-                        });
+                        ponints.Add(
+                            new ViewPoint()
+                            {
+                                title = point.GetProperty("content").GetString()!,
+                                start = int.Parse(point.GetProperty("from").ToString()),
+                                end = int.Parse(point.GetProperty("to").ToString()),
+                            }
+                        );
                     }
                 }
             }
@@ -532,9 +570,9 @@ namespace BBDown
         public static string? FindExecutable(string name)
         {
             var fileExt = OperatingSystem.IsWindows() ? ".exe" : "";
-            var searchPath = new [] { Environment.CurrentDirectory, Program.APP_DIR };
-            var envPath = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ??
-                          Array.Empty<string>();
+            var searchPath = new[] { Environment.CurrentDirectory, Program.APP_DIR };
+            var envPath =
+                Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? Array.Empty<string>();
             return searchPath.Concat(envPath).Select(p => Path.Combine(p, name + fileExt)).FirstOrDefault(File.Exists);
         }
 
@@ -548,8 +586,38 @@ namespace BBDown
         {
             byte[] mixinKeyEncTab = new byte[]
             {
-                46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
-                27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13
+                46,
+                47,
+                18,
+                2,
+                53,
+                8,
+                23,
+                32,
+                15,
+                50,
+                10,
+                31,
+                58,
+                3,
+                45,
+                35,
+                27,
+                43,
+                5,
+                49,
+                33,
+                9,
+                42,
+                19,
+                29,
+                28,
+                14,
+                39,
+                12,
+                38,
+                41,
+                13,
             };
 
             var tmp = new StringBuilder(32);
@@ -569,7 +637,10 @@ namespace BBDown
                 var json = JsonDocument.Parse(source).RootElement;
                 var is_login = json.GetProperty("data").GetProperty("isLogin").GetBoolean();
                 var wbi_img = json.GetProperty("data").GetProperty("wbi_img");
-                Core.Config.WBI = GetMixinKey(RSubString(wbi_img.GetProperty("img_url").GetString()) + RSubString(wbi_img.GetProperty("sub_url").GetString()));
+                Core.Config.WBI = GetMixinKey(
+                    RSubString(wbi_img.GetProperty("img_url").GetString())
+                        + RSubString(wbi_img.GetProperty("sub_url").GetString())
+                );
                 LogDebug("wbi: {0}", Core.Config.WBI);
                 return is_login;
             }
@@ -581,24 +652,34 @@ namespace BBDown
 
         [GeneratedRegex("av(\\d+)")]
         private static partial Regex AvRegex();
+
         [GeneratedRegex("[Bb][Vv]1(\\w+)")]
         private static partial Regex BVRegex();
+
         [GeneratedRegex("/ep(\\d+)")]
         private static partial Regex EpRegex();
+
         [GeneratedRegex("/ss(\\d+)")]
         private static partial Regex SsRegex();
+
         [GeneratedRegex("space\\.bilibili\\.com/(\\d+)")]
         private static partial Regex UidRegex();
+
         [GeneratedRegex("global\\.bilibili\\.com/play/\\d+/(\\d+)")]
         private static partial Regex GlobalEpRegex();
+
         [GeneratedRegex("bangumi/media/(md\\d+)")]
         private static partial Regex BangumiMdRegex();
+
         [GeneratedRegex("window.__INITIAL_STATE__=([\\s\\S].*?);\\(function\\(\\)")]
         private static partial Regex StateRegex();
+
         [GeneratedRegex("md(\\d+)")]
         private static partial Regex MdRegex();
+
         [GeneratedRegex("(^|&)?(\\w+)=([^&]+)(&|$)?", RegexOptions.Compiled)]
         private static partial Regex QueryRegex();
+
         [GeneratedRegex("libavutil\\s+(\\d+)\\. +(\\d+)\\.")]
         private static partial Regex LibavutilRegex();
     }

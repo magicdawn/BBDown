@@ -1,5 +1,5 @@
-﻿using BBDown.Core.Entity;
-using System.Text.Json;
+﻿using System.Text.Json;
+using BBDown.Core.Entity;
 using static BBDown.Core.Entity.Entity;
 using static BBDown.Core.Util.HTTPUtil;
 
@@ -24,19 +24,23 @@ namespace BBDown.Core.Fetcher
             List<Page> pagesInfo = new();
             foreach (var page in pages)
             {
-                Page p = new(page.GetProperty("index").GetInt32(),
-                    page.GetProperty("aid").ToString(),
-                    page.GetProperty("cid").ToString(),
-                    page.GetProperty("id").ToString(),
-                    page.GetProperty("title").ToString().Trim(),
-                    page.GetProperty("duration").GetInt32(),
-                    "",
-                    page.GetProperty("release_date").GetInt64(),
-                    "",
-                    "",
-                    ownerName,
-                    ownerMid);
-                if (p.epid == id) index = p.index.ToString();
+                Page p =
+                    new(
+                        page.GetProperty("index").GetInt32(),
+                        page.GetProperty("aid").ToString(),
+                        page.GetProperty("cid").ToString(),
+                        page.GetProperty("id").ToString(),
+                        page.GetProperty("title").ToString().Trim(),
+                        page.GetProperty("duration").GetInt32(),
+                        "",
+                        page.GetProperty("release_date").GetInt64(),
+                        "",
+                        "",
+                        ownerName,
+                        ownerMid
+                    );
+                if (p.epid == id)
+                    index = p.index.ToString();
                 pagesInfo.Add(p);
             }
             long pubTime = pagesInfo.Any() ? pagesInfo[0].pubTime : 0;
@@ -50,7 +54,7 @@ namespace BBDown.Core.Fetcher
                 PagesInfo = pagesInfo,
                 IsBangumi = true,
                 IsCheese = true,
-                Index = index
+                Index = index,
             };
 
             return info;

@@ -15,6 +15,7 @@ namespace BBDown.Core.Entity
         public List<Audio> BackgroundAudioTracks { get; set; } = new();
         public List<AudioMaterialInfo> RoleAudioList { get; set; } = new();
         public List<ViewPoint> ExtraPoints { get; set; } = new();
+
         // ⬇⬇⬇⬇⬇ FOR FLV ⬇⬇⬇⬇⬇
         public List<string> Clips { get; set; } = new();
         public List<string> Dfns { get; set; } = new();

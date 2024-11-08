@@ -1,5 +1,5 @@
-﻿using BBDown.Core.Entity;
-using System.Text.Json;
+﻿using System.Text.Json;
+using BBDown.Core.Entity;
 using static BBDown.Core.Entity.Entity;
 using static BBDown.Core.Util.HTTPUtil;
 
@@ -29,7 +29,8 @@ namespace BBDown.Core.Fetcher
             int index = 1;
             while (hasMore)
             {
-                var listApi = $"https://api.bilibili.com/x/v2/medialist/resource/list?type=8&oid={oid}&otype=2&biz_id={id}&with_current=true&mobi_app=web&ps=20&direction=false&sort_field=1&tid=0&desc=false";
+                var listApi =
+                    $"https://api.bilibili.com/x/v2/medialist/resource/list?type=8&oid={oid}&otype=2&biz_id={id}&with_current=true&mobi_app=web&ps=20&direction=false&sort_field=1&tid=0&desc=false";
                 json = await GetWebSourceAsync(listApi);
                 using var listJson = JsonDocument.Parse(json);
                 data = listJson.RootElement.GetProperty("data");
@@ -42,20 +43,29 @@ namespace BBDown.Core.Fetcher
                     var ownerMid = m.GetProperty("upper").GetProperty("mid").ToString();
                     foreach (var page in m.GetProperty("pages").EnumerateArray())
                     {
-                        Page p = new(index++,
-                        m.GetProperty("id").ToString(),
-                        page.GetProperty("id").ToString(),
-                        "", //epid
-                        pageCount == 1 ? m.GetProperty("title").ToString() : $"{m.GetProperty("title")}_P{page.GetProperty("page")}_{page.GetProperty("title")}", //单P使用外层标题 多P则拼接内层子标题
-                        page.GetProperty("duration").GetInt32(),
-                        page.GetProperty("dimension").GetProperty("width").ToString() + "x" + page.GetProperty("dimension").GetProperty("height").ToString(),
-                        m.GetProperty("pubtime").GetInt64(),
-                        m.GetProperty("cover").ToString(),
-                        desc,
-                        ownerName,
-                        ownerMid);
-                        if (!pagesInfo.Contains(p)) pagesInfo.Add(p);
-                        else index--;
+                        Page p =
+                            new(
+                                index++,
+                                m.GetProperty("id").ToString(),
+                                page.GetProperty("id").ToString(),
+                                "", //epid
+                                pageCount == 1
+                                    ? m.GetProperty("title").ToString()
+                                    : $"{m.GetProperty("title")}_P{page.GetProperty("page")}_{page.GetProperty("title")}", //单P使用外层标题 多P则拼接内层子标题
+                                page.GetProperty("duration").GetInt32(),
+                                page.GetProperty("dimension").GetProperty("width").ToString()
+                                    + "x"
+                                    + page.GetProperty("dimension").GetProperty("height").ToString(),
+                                m.GetProperty("pubtime").GetInt64(),
+                                m.GetProperty("cover").ToString(),
+                                desc,
+                                ownerName,
+                                ownerMid
+                            );
+                        if (!pagesInfo.Contains(p))
+                            pagesInfo.Add(p);
+                        else
+                            index--;
                     }
                     oid = m.GetProperty("id").ToString();
                 }
@@ -68,7 +78,7 @@ namespace BBDown.Core.Fetcher
                 Pic = "",
                 PubTime = pubTime,
                 PagesInfo = pagesInfo,
-                IsBangumi = false
+                IsBangumi = false,
             };
 
             return info;

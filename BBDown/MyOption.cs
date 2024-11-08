@@ -21,7 +21,7 @@ namespace BBDown
         public bool Interactive { get; set; }
         public bool HideStreams { get; set; }
         public bool MultiThread { get; set; } = true;
-        public bool SimplyMux {  get; set; } = false;
+        public bool SimplyMux { get; set; } = false;
         public bool VideoOnly { get; set; }
         public bool AudioOnly { get; set; }
         public bool DanmakuOnly { get; set; }
@@ -57,6 +57,7 @@ namespace BBDown
         public string EpHost { get; set; } = "api.bilibili.com";
         public string Area { get; set; } = "";
         public string? ConfigFile { get; set; }
+
         //以下仅为兼容旧版本命令行，不建议使用
         public string Aria2cProxy { get; set; } = "";
         public bool OnlyHevc { get; set; }

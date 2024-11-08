@@ -5,7 +5,8 @@
         public static void Log(object text, bool enter = true)
         {
             Console.Write(DateTime.Now.ToString("[yyyy-MM-dd HH:mm:ss.fff]") + " - " + text);
-            if (enter) Console.WriteLine();
+            if (enter)
+                Console.WriteLine();
         }
 
         public static void LogError(object text)

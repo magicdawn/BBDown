@@ -1,13 +1,14 @@
-﻿using QRCoder;
-using System;
+﻿using System;
+using QRCoder;
 
 namespace BBDown
 {
     public class ConsoleQRCode : AbstractQRCode
-	{
-		public ConsoleQRCode() { }
+    {
+        public ConsoleQRCode() { }
 
-		public ConsoleQRCode(QRCodeData data) : base(data) { }
+        public ConsoleQRCode(QRCodeData data)
+            : base(data) { }
 
         public void GetGraphic() => GetGraphic(ConsoleColor.Black, ConsoleColor.White);
 

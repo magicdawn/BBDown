@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.CommandLine.Parsing;
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
-using static BBDown.Core.Logger;
 using System.Text;
 using System.Threading.Tasks;
+using static BBDown.Core.Logger;
 
 namespace BBDown
 {
@@ -22,8 +22,7 @@ namespace BBDown
                 if (File.Exists(configPath))
                 {
                     Log($"加载配置文件: {configPath}");
-                    var configArgs = File
-                        .ReadAllLines(configPath)
+                    var configArgs = File.ReadAllLines(configPath)
                         .Where(s => !string.IsNullOrEmpty(s) && !s.StartsWith("#"))
                         .SelectMany(s =>
                         {
@@ -32,14 +31,15 @@ namespace BBDown
                             {
                                 var spaceIndex = trimLine.IndexOf(' ');
                                 var paramsGroup = new string[] { trimLine[..spaceIndex], trimLine[spaceIndex..] };
-                                return paramsGroup.Where(s => !string.IsNullOrEmpty(s)).Select(s => s.Trim(' ').Trim('\"'));
+                                return paramsGroup
+                                    .Where(s => !string.IsNullOrEmpty(s))
+                                    .Select(s => s.Trim(' ').Trim('\"'));
                             }
                             else
                             {
                                 return new string[] { trimLine.Trim('\"') };
                             }
-                        }
-                        );
+                        });
                     var configArgsResult = rootCommand.Parse(configArgs.ToArray());
                     foreach (var item in configArgsResult.CommandResult.Children)
                     {

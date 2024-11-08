@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using static BBDown.Core.Entity.Entity;
-using static BBDown.BBDownUtil;
-using static BBDown.Core.Logger;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BBDown.Core;
 using BBDown.Core.Entity;
 using static BBDown.BBDownDownloadUtil;
+using static BBDown.BBDownUtil;
+using static BBDown.Core.Entity.Entity;
+using static BBDown.Core.Logger;
 
 namespace BBDown
 {
     internal partial class Program
     {
-
         /// <summary>
         /// 兼容旧版本命令行参数并给出警告
         /// </summary>
@@ -24,7 +23,9 @@ namespace BBDown
         {
             if (myOption.AddDfnSubfix)
             {
-                LogWarn("--add-dfn-subfix 已被弃用, 建议使用 --file-pattern/-F 或 --multi-file-pattern/-M 来自定义输出文件名格式");
+                LogWarn(
+                    "--add-dfn-subfix 已被弃用, 建议使用 --file-pattern/-F 或 --multi-file-pattern/-M 来自定义输出文件名格式"
+                );
                 if (string.IsNullOrEmpty(myOption.FilePattern) && string.IsNullOrEmpty(myOption.MultiFilePattern))
                 {
                     SinglePageDefaultSavePath += "[<dfn>]";
@@ -39,22 +40,30 @@ namespace BBDown
             }
             if (myOption.OnlyHevc)
             {
-                LogWarn("--only-hevc/-hevc 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将hevc设置为最高优先级");
+                LogWarn(
+                    "--only-hevc/-hevc 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将hevc设置为最高优先级"
+                );
                 myOption.EncodingPriority = "hevc";
             }
             if (myOption.OnlyAvc)
             {
-                LogWarn("--only-avc/-avc 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将avc设置为最高优先级");
+                LogWarn(
+                    "--only-avc/-avc 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将avc设置为最高优先级"
+                );
                 myOption.EncodingPriority = "avc";
             }
             if (myOption.OnlyAv1)
             {
-                LogWarn("--only-av1/-av1 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将av1设置为最高优先级");
+                LogWarn(
+                    "--only-av1/-av1 已被弃用, 请使用 --encoding-priority 来设置编码优先级, 本次执行已将av1设置为最高优先级"
+                );
                 myOption.EncodingPriority = "av1";
             }
             if (myOption.NoPaddingPageNum)
             {
-                LogWarn("--no-padding-page-num 已被弃用, 建议使用 --file-pattern/-F 或 --multi-file-pattern/-M 来自定义输出文件名格式");
+                LogWarn(
+                    "--no-padding-page-num 已被弃用, 建议使用 --file-pattern/-F 或 --multi-file-pattern/-M 来自定义输出文件名格式"
+                );
                 if (string.IsNullOrEmpty(myOption.FilePattern) && string.IsNullOrEmpty(myOption.MultiFilePattern))
                 {
                     MultiPageDefaultSavePath = MultiPageDefaultSavePath.Replace("<pageNumberWithZero>", "<pageNumber>");
@@ -63,7 +72,9 @@ namespace BBDown
             }
             if (myOption.BandwithAscending)
             {
-                LogWarn("--bandwith-ascending 已被弃用, 建议使用 --video-ascending 与 --audio-ascending 来指定视频或音频是否升序, 本次执行已将视频与音频均设为升序");
+                LogWarn(
+                    "--bandwith-ascending 已被弃用, 建议使用 --video-ascending 与 --audio-ascending 来指定视频或音频是否升序, 本次执行已将视频与音频均设为升序"
+                );
                 myOption.VideoAscending = true;
                 myOption.AudioAscending = true;
             }
@@ -80,12 +91,19 @@ namespace BBDown
             firstEncoding = "";
             if (myOption.EncodingPriority != null)
             {
-                var encodingPriorityTemp = myOption.EncodingPriority.Replace("，", ",").Split(',').Select(s => s.ToUpper().Trim()).Where(s => !string.IsNullOrEmpty(s));
+                var encodingPriorityTemp = myOption
+                    .EncodingPriority.Replace("，", ",")
+                    .Split(',')
+                    .Select(s => s.ToUpper().Trim())
+                    .Where(s => !string.IsNullOrEmpty(s));
                 byte index = 0;
                 firstEncoding = encodingPriorityTemp.First();
                 foreach (string encoding in encodingPriorityTemp)
                 {
-                    if (encodingPriority.ContainsKey(encoding)) { continue; }
+                    if (encodingPriority.ContainsKey(encoding))
+                    {
+                        continue;
+                    }
                     encodingPriority[encoding] = index;
                     index++;
                 }
@@ -103,11 +121,18 @@ namespace BBDown
             var dfnPriority = new Dictionary<string, int>();
             if (myOption.DfnPriority != null)
             {
-                var dfnPriorityTemp = myOption.DfnPriority.Replace("，", ",").Split(',').Select(s => s.ToUpper().Trim()).Where(s => !string.IsNullOrEmpty(s));
+                var dfnPriorityTemp = myOption
+                    .DfnPriority.Replace("，", ",")
+                    .Split(',')
+                    .Select(s => s.ToUpper().Trim())
+                    .Where(s => !string.IsNullOrEmpty(s));
                 int index = 0;
                 foreach (string dfn in dfnPriorityTemp)
                 {
-                    if (dfnPriority.ContainsKey(dfn)) { continue; }
+                    if (dfnPriority.ContainsKey(dfn))
+                    {
+                        continue;
+                    }
                     dfnPriority[dfn] = index;
                     index++;
                 }
@@ -168,7 +193,6 @@ namespace BBDown
                         throw new Exception("找不到可执行的aria2c文件");
                     BBDownAria2c.ARIA2C = binPath;
                 }
-
             }
         }
 
@@ -228,14 +252,22 @@ namespace BBDown
                 LogDebug("文件路径：{0}", Path.Combine(APP_DIR, "BBDown.data"));
                 Config.COOKIE = File.ReadAllText(Path.Combine(APP_DIR, "BBDown.data"));
             }
-            if (string.IsNullOrEmpty(Config.TOKEN) && File.Exists(Path.Combine(APP_DIR, "BBDownTV.data")) && myOption.UseTvApi)
+            if (
+                string.IsNullOrEmpty(Config.TOKEN)
+                && File.Exists(Path.Combine(APP_DIR, "BBDownTV.data"))
+                && myOption.UseTvApi
+            )
             {
                 Log("加载本地token...");
                 LogDebug("文件路径：{0}", Path.Combine(APP_DIR, "BBDownTV.data"));
                 Config.TOKEN = File.ReadAllText(Path.Combine(APP_DIR, "BBDownTV.data"));
                 Config.TOKEN = Config.TOKEN.Replace("access_token=", "");
             }
-            if (string.IsNullOrEmpty(Config.TOKEN) && File.Exists(Path.Combine(APP_DIR, "BBDownApp.data")) && myOption.UseAppApi)
+            if (
+                string.IsNullOrEmpty(Config.TOKEN)
+                && File.Exists(Path.Combine(APP_DIR, "BBDownApp.data"))
+                && myOption.UseAppApi
+            )
             {
                 Log("加载本地token...");
                 LogDebug("文件路径：{0}", Path.Combine(APP_DIR, "BBDownApp.data"));
@@ -245,6 +277,7 @@ namespace BBDown
         }
 
         private static object fileLock = new object();
+
         public static void SaveAidToFile(string aid)
         {
             lock (fileLock)
@@ -260,7 +293,8 @@ namespace BBDown
             lock (fileLock)
             {
                 string filePath = Path.Combine(APP_DIR, "BBDown.archives");
-                if (!File.Exists(filePath)) return false;
+                if (!File.Exists(filePath))
+                    return false;
                 LogDebug("文件路径：{0}", filePath);
                 var text = File.ReadAllText(filePath);
                 return text.Split('|').Any(item => item == aid);
@@ -325,7 +359,12 @@ namespace BBDown
                         }
                     }
                 }
-                catch { LogError("解析分P参数时失败了~"); selectedPages = null; };
+                catch
+                {
+                    LogError("解析分P参数时失败了~");
+                    selectedPages = null;
+                }
+                ;
             }
 
             return selectedPages;
@@ -398,14 +437,22 @@ namespace BBDown
                 foreach (var a in parsedResult.BackgroundAudioTracks)
                 {
                     int pDur = pageDur == 0 ? a.dur : pageDur;
-                    LogColor($"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]", false);
+                    LogColor(
+                        $"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]",
+                        false
+                    );
                 }
-                Log($"共计{parsedResult.RoleAudioList.Count}条配音, 每条包含{parsedResult.RoleAudioList[0].audio.Count}条配音流.");
+                Log(
+                    $"共计{parsedResult.RoleAudioList.Count}条配音, 每条包含{parsedResult.RoleAudioList[0].audio.Count}条配音流."
+                );
                 index = 0;
                 foreach (var a in parsedResult.RoleAudioList[0].audio)
                 {
                     int pDur = pageDur == 0 ? a.dur : pageDur;
-                    LogColor($"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]", false);
+                    LogColor(
+                        $"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]",
+                        false
+                    );
                 }
             }
             //展示所有的音视频流信息
@@ -417,8 +464,15 @@ namespace BBDown
                 {
                     int pDur = pageDur == 0 ? v.dur : pageDur;
                     var size = v.size > 0 ? v.size : pDur * v.bandwith * 1024 / 8;
-                    LogColor($"{index++}. [{v.dfn}] [{v.res}] [{v.codecs}] [{v.fps}] [{v.bandwith} kbps] [~{FormatFileSize(size)}]".Replace("[] ", ""), false);
-                    if (onlyShowInfo) Console.WriteLine(v.baseUrl);
+                    LogColor(
+                        $"{index++}. [{v.dfn}] [{v.res}] [{v.codecs}] [{v.fps}] [{v.bandwith} kbps] [~{FormatFileSize(size)}]".Replace(
+                            "[] ",
+                            ""
+                        ),
+                        false
+                    );
+                    if (onlyShowInfo)
+                        Console.WriteLine(v.baseUrl);
                 }
             }
             if (parsedResult.AudioTracks.Any())
@@ -428,8 +482,12 @@ namespace BBDown
                 foreach (var a in parsedResult.AudioTracks)
                 {
                     int pDur = pageDur == 0 ? a.dur : pageDur;
-                    LogColor($"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]", false);
-                    if (onlyShowInfo) Console.WriteLine(a.baseUrl);
+                    LogColor(
+                        $"{index++}. [{a.codecs}] [{a.bandwith} kbps] [~{FormatFileSize(pDur * a.bandwith * 1024 / 8)}]",
+                        false
+                    );
+                    if (onlyShowInfo)
+                        Console.WriteLine(a.baseUrl);
                 }
             }
         }
@@ -440,12 +498,21 @@ namespace BBDown
             {
                 int pDur = pageDur == 0 ? selectedVideo.dur : pageDur;
                 var size = selectedVideo.size > 0 ? selectedVideo.size : pDur * selectedVideo.bandwith * 1024 / 8;
-                LogColor($"[视频] [{selectedVideo.dfn}] [{selectedVideo.res}] [{selectedVideo.codecs}] [{selectedVideo.fps}] [{selectedVideo.bandwith} kbps] [~{FormatFileSize(size)}]".Replace("[] ", ""), false);
+                LogColor(
+                    $"[视频] [{selectedVideo.dfn}] [{selectedVideo.res}] [{selectedVideo.codecs}] [{selectedVideo.fps}] [{selectedVideo.bandwith} kbps] [~{FormatFileSize(size)}]".Replace(
+                        "[] ",
+                        ""
+                    ),
+                    false
+                );
             }
             if (selectedAudio != null)
             {
                 int pDur = pageDur == 0 ? selectedAudio.dur : pageDur;
-                LogColor($"[音频] [{selectedAudio.codecs}] [{selectedAudio.bandwith} kbps] [~{FormatFileSize(pDur * selectedAudio.bandwith * 1024 / 8)}]", false);
+                LogColor(
+                    $"[音频] [{selectedAudio.codecs}] [{selectedAudio.bandwith} kbps] [~{FormatFileSize(pDur * selectedAudio.bandwith * 1024 / 8)}]",
+                    false
+                );
             }
         }
 
@@ -462,7 +529,8 @@ namespace BBDown
                 Log("请选择一条视频流(输入序号): ", false);
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 vIndex = Convert.ToInt32(Console.ReadLine());
-                if (vIndex > parsedResult.VideoTracks.Count || vIndex < 0) vIndex = 0;
+                if (vIndex > parsedResult.VideoTracks.Count || vIndex < 0)
+                    vIndex = 0;
                 Console.ResetColor();
             }
             if (parsedResult.AudioTracks.Any())
@@ -470,7 +538,8 @@ namespace BBDown
                 Log("请选择一条音频流(输入序号): ", false);
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 aIndex = Convert.ToInt32(Console.ReadLine());
-                if (aIndex > parsedResult.AudioTracks.Count || aIndex < 0) aIndex = 0;
+                if (aIndex > parsedResult.AudioTracks.Count || aIndex < 0)
+                    aIndex = 0;
                 Console.ResetColor();
             }
         }
@@ -479,17 +548,27 @@ namespace BBDown
         /// 下载轨道
         /// </summary>
         /// <returns></returns>
-        private static async Task DownloadTrackAsync(string url, string destPath, DownloadConfig downloadConfig, bool video)
+        private static async Task DownloadTrackAsync(
+            string url,
+            string destPath,
+            DownloadConfig downloadConfig,
+            bool video
+        )
         {
             if (downloadConfig.MultiThread && !url.Contains("-cmcc-"))
             {
                 // 下载前先清理残片
-                foreach (var file in new DirectoryInfo(Path.GetDirectoryName(destPath)!).EnumerateFiles("*.?clip")) file.Delete();
+                foreach (var file in new DirectoryInfo(Path.GetDirectoryName(destPath)!).EnumerateFiles("*.?clip"))
+                    file.Delete();
                 await MultiThreadDownloadFileAsync(url, destPath, downloadConfig);
                 Log($"合并{(video ? "视频" : "音频")}分片...");
-                CombineMultipleFilesIntoSingleFile(GetFiles(Path.GetDirectoryName(destPath)!, $".{(video ? "v" : "a")}clip"), destPath);
+                CombineMultipleFilesIntoSingleFile(
+                    GetFiles(Path.GetDirectoryName(destPath)!, $".{(video ? "v" : "a")}clip"),
+                    destPath
+                );
                 Log("清理分片...");
-                foreach (var file in new DirectoryInfo(Path.GetDirectoryName(destPath)!).EnumerateFiles("*.?clip")) file.Delete();
+                foreach (var file in new DirectoryInfo(Path.GetDirectoryName(destPath)!).EnumerateFiles("*.?clip"))
+                    file.Delete();
             }
             else
             {
@@ -504,8 +583,10 @@ namespace BBDown
 
         [GeneratedRegex("://.*:\\d+/")]
         private static partial Regex PcdnRegex();
+
         [GeneratedRegex("://.*akamaized\\.net/")]
         private static partial Regex AkamRegex();
+
         [GeneratedRegex("://[^/]+/")]
         private static partial Regex UposRegex();
     }

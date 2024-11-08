@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
-using static BBDown.Core.Entity.Entity;
-using static BBDown.BBDownUtil;
-using static BBDown.Core.Util.SubUtil;
-using static BBDown.Core.Logger;
-using System.IO;
 using BBDown.Core;
+using static BBDown.BBDownUtil;
+using static BBDown.Core.Entity.Entity;
+using static BBDown.Core.Logger;
+using static BBDown.Core.Util.SubUtil;
 
 namespace BBDown
 {
@@ -26,7 +26,8 @@ namespace BBDown
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.CreateNoWindow = false;
-            p.ErrorDataReceived += delegate (object sendProcess, DataReceivedEventArgs output) {
+            p.ErrorDataReceived += delegate(object sendProcess, DataReceivedEventArgs output)
+            {
                 if (!string.IsNullOrWhiteSpace(output.Data))
                     Log(output.Data);
             };
@@ -44,7 +45,21 @@ namespace BBDown
             return string.IsNullOrEmpty(str) ? str : str.Replace("\"", "'").Replace("\\", "\\\\");
         }
 
-        private static int MuxByMp4box(string videoPath, string audioPath, string outPath, string desc, string title, string author, string episodeId, string pic, string lang, List<Subtitle>? subs, bool audioOnly, bool videoOnly, List<ViewPoint>? points)
+        private static int MuxByMp4box(
+            string videoPath,
+            string audioPath,
+            string outPath,
+            string desc,
+            string title,
+            string author,
+            string episodeId,
+            string pic,
+            string lang,
+            List<Subtitle>? subs,
+            bool audioOnly,
+            bool videoOnly,
+            List<ViewPoint>? points
+        )
         {
             StringBuilder inputArg = new();
             StringBuilder metaArg = new();
@@ -63,7 +78,10 @@ namespace BBDown
             if (points != null && points.Any())
             {
                 var meta = GetMp4boxMetaString(points);
-                var metaFile = Path.Combine(Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!, "chapters");
+                var metaFile = Path.Combine(
+                    Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!,
+                    "chapters"
+                );
                 File.WriteAllText(metaFile, meta);
                 inputArg.Append($" -chap  \"{metaFile}\"  ");
             }
@@ -83,19 +101,43 @@ namespace BBDown
                     if (File.Exists(subs[i].path) && File.ReadAllText(subs[i].path!) != "")
                     {
                         nowId++;
-                        inputArg.Append($" -add \"{subs[i].path}#trackID=1:name=:hdlr=sbtl:lang={GetSubtitleCode(subs[i].lan).Item1}\" ");
+                        inputArg.Append(
+                            $" -add \"{subs[i].path}#trackID=1:name=:hdlr=sbtl:lang={GetSubtitleCode(subs[i].lan).Item1}\" "
+                        );
                         inputArg.Append($" -udta {nowId}:type=name:str=\"{GetSubtitleCode(subs[i].lan).Item2}\" ");
                     }
                 }
             }
 
             //----分析完毕
-            var arguments = (Config.DEBUG_LOG ? " -verbose " : "") + inputArg.ToString() + (metaArg.ToString() == "" ? "" : " -itags tool=" + metaArg.ToString()) + $" -new -- \"{outPath}\"";
+            var arguments =
+                (Config.DEBUG_LOG ? " -verbose " : "")
+                + inputArg.ToString()
+                + (metaArg.ToString() == "" ? "" : " -itags tool=" + metaArg.ToString())
+                + $" -new -- \"{outPath}\"";
             LogDebug("mp4box命令: {0}", arguments);
             return RunExe(MP4BOX, arguments, MP4BOX != "mp4box");
         }
 
-        public static int MuxAV(bool useMp4box, string videoPath, string audioPath, List<AudioMaterial> audioMaterial, string outPath, string desc = "", string title = "", string author = "", string episodeId = "", string pic = "", string lang = "", List<Subtitle>? subs = null, bool audioOnly = false, bool videoOnly = false, List<ViewPoint>? points = null, long pubTime = 0, bool simplyMux = false)
+        public static int MuxAV(
+            bool useMp4box,
+            string videoPath,
+            string audioPath,
+            List<AudioMaterial> audioMaterial,
+            string outPath,
+            string desc = "",
+            string title = "",
+            string author = "",
+            string episodeId = "",
+            string pic = "",
+            string lang = "",
+            List<Subtitle>? subs = null,
+            bool audioOnly = false,
+            bool videoOnly = false,
+            List<ViewPoint>? points = null,
+            long pubTime = 0,
+            bool simplyMux = false
+        )
         {
             if (audioOnly && audioPath != "")
                 videoPath = "";
@@ -107,10 +149,24 @@ namespace BBDown
 
             if (useMp4box)
             {
-                return MuxByMp4box(videoPath, audioPath, outPath, desc, title, author, episodeId, pic, lang, subs, audioOnly, videoOnly, points);
+                return MuxByMp4box(
+                    videoPath,
+                    audioPath,
+                    outPath,
+                    desc,
+                    title,
+                    author,
+                    episodeId,
+                    pic,
+                    lang,
+                    subs,
+                    audioOnly,
+                    videoOnly,
+                    points
+                );
             }
 
-            if (outPath.Contains('/') && ! Directory.Exists(Path.GetDirectoryName(outPath)))
+            if (outPath.Contains('/') && !Directory.Exists(Path.GetDirectoryName(outPath)))
                 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
             //----分析并生成-i参数
             StringBuilder inputArg = new();
@@ -134,8 +190,10 @@ namespace BBDown
                     inputCount++;
                     audioCount++;
                     inputArg.Append($"-i \"{audio.path}\" ");
-                    if (!string.IsNullOrWhiteSpace(audio.title)) metaArg.Append($"-metadata:s:a:{audioCount} title=\"{audio.title}\" ");
-                    if (!string.IsNullOrWhiteSpace(audio.personName)) metaArg.Append($"-metadata:s:a:{audioCount} artist=\"{audio.personName}\" ");
+                    if (!string.IsNullOrWhiteSpace(audio.title))
+                        metaArg.Append($"-metadata:s:a:{audioCount} title=\"{audio.title}\" ");
+                    if (!string.IsNullOrWhiteSpace(audio.personName))
+                        metaArg.Append($"-metadata:s:a:{audioCount} artist=\"{audio.personName}\" ");
                 }
             }
 
@@ -149,11 +207,13 @@ namespace BBDown
             {
                 for (int i = 0; i < subs.Count; i++)
                 {
-                    if(File.Exists(subs[i].path) && File.ReadAllText(subs[i].path!) != "")
+                    if (File.Exists(subs[i].path) && File.ReadAllText(subs[i].path!) != "")
                     {
                         inputCount++;
                         inputArg.Append($"-i \"{subs[i].path}\" ");
-                        metaArg.Append($"-metadata:s:s:{i} title=\"{GetSubtitleCode(subs[i].lan).Item2}\" -metadata:s:s:{i} language={GetSubtitleCode(subs[i].lan).Item1} ");
+                        metaArg.Append(
+                            $"-metadata:s:s:{i} title=\"{GetSubtitleCode(subs[i].lan).Item2}\" -metadata:s:s:{i} language={GetSubtitleCode(subs[i].lan).Item1} "
+                        );
                     }
                 }
             }
@@ -165,7 +225,10 @@ namespace BBDown
             if (points != null && points.Any())
             {
                 var meta = GetFFmpegMetaString(points);
-                var metaFile = Path.Combine(Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!, "chapters");
+                var metaFile = Path.Combine(
+                    Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!,
+                    "chapters"
+                );
                 File.WriteAllText(metaFile, meta);
                 inputArg.Append($"-i \"{metaFile}\" -map_chapters {inputCount} ");
             }
@@ -177,17 +240,27 @@ namespace BBDown
             argsBuilder.Append($"-loglevel {(Config.DEBUG_LOG ? "verbose" : "warning")} -y ");
             argsBuilder.Append(inputArg);
             argsBuilder.Append(metaArg);
-            if (!simplyMux) {
+            if (!simplyMux)
+            {
                 argsBuilder.Append($"-metadata title=\"{(episodeId == "" ? title : episodeId)}\" ");
-                if (lang != "") argsBuilder.Append($"-metadata:s:a:0 language={lang} ");
-                if (!string.IsNullOrWhiteSpace(desc)) argsBuilder.Append($"-metadata description=\"{desc}\" ");
-                if (!string.IsNullOrEmpty(author)) argsBuilder.Append($"-metadata artist=\"{author}\" ");
-                if (episodeId != "") argsBuilder.Append($"-metadata album=\"{title}\" ");
-                if (pubTime != 0) argsBuilder.Append($"-metadata creation_time=\"{(DateTimeOffset.FromUnixTimeSeconds(pubTime).ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"))}\" ");
+                if (lang != "")
+                    argsBuilder.Append($"-metadata:s:a:0 language={lang} ");
+                if (!string.IsNullOrWhiteSpace(desc))
+                    argsBuilder.Append($"-metadata description=\"{desc}\" ");
+                if (!string.IsNullOrEmpty(author))
+                    argsBuilder.Append($"-metadata artist=\"{author}\" ");
+                if (episodeId != "")
+                    argsBuilder.Append($"-metadata album=\"{title}\" ");
+                if (pubTime != 0)
+                    argsBuilder.Append(
+                        $"-metadata creation_time=\"{(DateTimeOffset.FromUnixTimeSeconds(pubTime).ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"))}\" "
+                    );
             }
             argsBuilder.Append("-c copy ");
-            if (audioOnly && audioPath == "") argsBuilder.Append("-vn ");
-            if (subs != null) argsBuilder.Append("-c:s mov_text ");
+            if (audioOnly && audioPath == "")
+                argsBuilder.Append("-vn ");
+            if (subs != null)
+                argsBuilder.Append("-c:s mov_text ");
             argsBuilder.Append($"-movflags faststart -strict unofficial -strict -2 -f mp4 -- \"{outPath}\"");
 
             string arguments = argsBuilder.ToString();
@@ -206,15 +279,20 @@ namespace BBDown
             {
                 foreach (var file in files)
                 {
-                    var tmpFile = Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + ".ts");
-                    var arguments = $"-loglevel warning -y -i \"{file}\" -map 0 -c copy -f mpegts -bsf:v h264_mp4toannexb \"{tmpFile}\"";
+                    var tmpFile = Path.Combine(
+                        Path.GetDirectoryName(file)!,
+                        Path.GetFileNameWithoutExtension(file) + ".ts"
+                    );
+                    var arguments =
+                        $"-loglevel warning -y -i \"{file}\" -map 0 -c copy -f mpegts -bsf:v h264_mp4toannexb \"{tmpFile}\"";
                     LogDebug("ffmpeg命令: {0}", arguments);
                     RunExe("ffmpeg", arguments);
                     File.Delete(file);
                 }
                 var f = GetFiles(Path.GetDirectoryName(files[0])!, ".ts");
                 CombineMultipleFilesIntoSingleFile(f, outPath);
-                foreach (var s in f) File.Delete(s);
+                foreach (var s in f)
+                    File.Delete(s);
             }
         }
     }

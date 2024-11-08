@@ -1,5 +1,5 @@
-﻿using BBDown.Core.Entity;
-using System.Text.Json;
+﻿using System.Text.Json;
+using BBDown.Core.Entity;
 using static BBDown.Core.Entity.Entity;
 using static BBDown.Core.Util.HTTPUtil;
 
@@ -19,7 +19,9 @@ namespace BBDown.Core.Fetcher
             string title = result.GetProperty("title").ToString();
             string desc = result.GetProperty("evaluate").ToString();
             string pubTimeStr = result.GetProperty("publish").GetProperty("pub_time").ToString();
-            long pubTime = string.IsNullOrEmpty(pubTimeStr) ? 0 : DateTimeOffset.ParseExact(pubTimeStr, "yyyy-MM-dd HH:mm:ss", null).ToUnixTimeSeconds();
+            long pubTime = string.IsNullOrEmpty(pubTimeStr)
+                ? 0
+                : DateTimeOffset.ParseExact(pubTimeStr, "yyyy-MM-dd HH:mm:ss", null).ToUnixTimeSeconds();
             var pages = result.GetProperty("episodes").EnumerateArray();
             List<Page> pagesInfo = new();
             int i = 1;
@@ -44,26 +46,34 @@ namespace BBDown.Core.Fetcher
             foreach (var page in pages)
             {
                 //跳过预告
-                if (page.TryGetProperty("badge", out JsonElement badge) && badge.ToString() == "预告") continue;
+                if (page.TryGetProperty("badge", out JsonElement badge) && badge.ToString() == "预告")
+                    continue;
                 string res = "";
                 try
                 {
-                    res = page.GetProperty("dimension").GetProperty("width").ToString() + "x" + page.GetProperty("dimension").GetProperty("height").ToString();
+                    res =
+                        page.GetProperty("dimension").GetProperty("width").ToString()
+                        + "x"
+                        + page.GetProperty("dimension").GetProperty("height").ToString();
                 }
                 catch (Exception) { }
                 string _title = page.GetProperty("title").ToString() + " " + page.GetProperty("long_title").ToString();
                 _title = _title.Trim();
-                Page p = new(i++,
-                    page.GetProperty("aid").ToString(),
-                    page.GetProperty("cid").ToString(),
-                    page.GetProperty("id").ToString(),
-                    _title,
-                    0, res,
-                    page.GetProperty("pub_time").GetInt64());
-                if (p.epid == id) index = p.index.ToString();
+                Page p =
+                    new(
+                        i++,
+                        page.GetProperty("aid").ToString(),
+                        page.GetProperty("cid").ToString(),
+                        page.GetProperty("id").ToString(),
+                        _title,
+                        0,
+                        res,
+                        page.GetProperty("pub_time").GetInt64()
+                    );
+                if (p.epid == id)
+                    index = p.index.ToString();
                 pagesInfo.Add(p);
             }
-
 
             var info = new VInfo
             {
@@ -74,7 +84,7 @@ namespace BBDown.Core.Fetcher
                 PagesInfo = pagesInfo,
                 IsBangumi = true,
                 IsCheese = true,
-                Index = index
+                Index = index,
             };
 
             return info;

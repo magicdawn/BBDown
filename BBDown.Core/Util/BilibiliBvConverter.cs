@@ -15,7 +15,9 @@ namespace BBDown.Core.Util
         private const long BASE = 58L;
         private const byte BV_LEN = 9;
 
-        private static readonly byte[] ALPHABET = Encoding.ASCII.GetBytes("FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf");
+        private static readonly byte[] ALPHABET = Encoding.ASCII.GetBytes(
+            "FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf"
+        );
 
         private static readonly Dictionary<byte, long> REV_ALPHABETA = new Dictionary<byte, long>();
 

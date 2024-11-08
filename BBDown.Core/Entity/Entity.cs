@@ -1,5 +1,5 @@
-﻿using BBDown.Core.Util;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
+using BBDown.Core.Util;
 
 namespace BBDown.Core.Entity
 {
@@ -39,7 +39,17 @@ namespace BBDown.Core.Entity
             }
 
             [SetsRequiredMembers]
-            public Page(int index, string aid, string cid, string epid, string title, int dur, string res, long pubTime, string cover)
+            public Page(
+                int index,
+                string aid,
+                string cid,
+                string epid,
+                string title,
+                int dur,
+                string res,
+                long pubTime,
+                string cover
+            )
             {
                 this.aid = aid;
                 this.index = index;
@@ -53,7 +63,18 @@ namespace BBDown.Core.Entity
             }
 
             [SetsRequiredMembers]
-            public Page(int index, string aid, string cid, string epid, string title, int dur, string res, long pubTime, string cover, string desc)
+            public Page(
+                int index,
+                string aid,
+                string cid,
+                string epid,
+                string title,
+                int dur,
+                string res,
+                long pubTime,
+                string cover,
+                string desc
+            )
             {
                 this.aid = aid;
                 this.index = index;
@@ -68,7 +89,20 @@ namespace BBDown.Core.Entity
             }
 
             [SetsRequiredMembers]
-            public Page(int index, string aid, string cid, string epid, string title, int dur, string res, long pubTime, string cover, string desc, string ownerName, string ownerMid)
+            public Page(
+                int index,
+                string aid,
+                string cid,
+                string epid,
+                string title,
+                int dur,
+                string res,
+                long pubTime,
+                string cover,
+                string desc,
+                string ownerName,
+                string ownerMid
+            )
             {
                 this.aid = aid;
                 this.index = index;
@@ -102,10 +136,7 @@ namespace BBDown.Core.Entity
 
             public override bool Equals(object? obj)
             {
-                return obj is Page page &&
-                       aid == page.aid &&
-                       cid == page.cid &&
-                       epid == page.epid;
+                return obj is Page page && aid == page.aid && cid == page.cid && epid == page.epid;
             }
 
             public override int GetHashCode()
@@ -135,14 +166,14 @@ namespace BBDown.Core.Entity
 
             public override bool Equals(object? obj)
             {
-                return obj is Video video &&
-                       id == video.id &&
-                       dfn == video.dfn &&
-                       res == video.res &&
-                       fps == video.fps &&
-                       codecs == video.codecs &&
-                       bandwith == video.bandwith &&
-                       dur == video.dur;
+                return obj is Video video
+                    && id == video.id
+                    && dfn == video.dfn
+                    && res == video.res
+                    && fps == video.fps
+                    && codecs == video.codecs
+                    && bandwith == video.bandwith
+                    && dur == video.dur;
             }
 
             public override int GetHashCode()
@@ -162,12 +193,12 @@ namespace BBDown.Core.Entity
 
             public override bool Equals(object? obj)
             {
-                return obj is Audio audio &&
-                       id == audio.id &&
-                       dfn == audio.dfn &&
-                       codecs == audio.codecs &&
-                       bandwith == audio.bandwith &&
-                       dur == audio.dur;
+                return obj is Audio audio
+                    && id == audio.id
+                    && dfn == audio.dfn
+                    && codecs == audio.codecs
+                    && bandwith == audio.bandwith
+                    && dur == audio.dur;
             }
 
             public override int GetHashCode()

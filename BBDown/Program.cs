@@ -1,25 +1,25 @@
-using QRCoder;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using static BBDown.Core.Entity.Entity;
-using static BBDown.BBDownUtil;
-using static BBDown.BBDownDownloadUtil;
-using static BBDown.Core.Parser;
-using static BBDown.Core.Logger;
-using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using BBDown.Core;
-using BBDown.Core.Util;
-using System.Text.Json.Serialization;
-using System.CommandLine.Builder;
 using BBDown.Core.Entity;
+using BBDown.Core.Util;
+using QRCoder;
+using static BBDown.BBDownDownloadUtil;
+using static BBDown.BBDownUtil;
+using static BBDown.Core.Entity.Entity;
+using static BBDown.Core.Logger;
+using static BBDown.Core.Parser;
 
 namespace BBDown
 {
@@ -29,7 +29,7 @@ namespace BBDown
         public static string SinglePageDefaultSavePath { get; set; } = "<videoTitle>";
         public static string MultiPageDefaultSavePath { get; set; } = "<videoTitle>/[P<pageNumberWithZero>]<pageTitle>";
 
-        public readonly static string APP_DIR = Path.GetDirectoryName(Environment.ProcessPath)!;
+        public static readonly string APP_DIR = Path.GetDirectoryName(Environment.ProcessPath)!;
 
         private static int Compare(Audio r1, Audio r2)
         {
@@ -72,21 +72,12 @@ namespace BBDown
             ServicePointManager.DefaultConnectionLimit = 2048;
 
             var rootCommand = CommandLineInvoker.GetRootCommand(RunApp);
-            Command loginCommand = new(
-                "login",
-                "通过APP扫描二维码以登录您的WEB账号");
+            Command loginCommand = new("login", "通过APP扫描二维码以登录您的WEB账号");
             rootCommand.AddCommand(loginCommand);
-            Command loginTVCommand = new(
-                "logintv",
-                "通过APP扫描二维码以登录您的TV账号");
+            Command loginTVCommand = new("logintv", "通过APP扫描二维码以登录您的TV账号");
             rootCommand.AddCommand(loginTVCommand);
-            var serverUrlOpt = new Option<string>(
-                new[] { "--listen", "-l" },
-                description: "服务器监听url");
-            Command runAsServerCommand = new(
-                "serve",
-                "以服务器模式运行")
-            { serverUrlOpt };
+            var serverUrlOpt = new Option<string>(new[] { "--listen", "-l" }, description: "服务器监听url");
+            Command runAsServerCommand = new("serve", "以服务器模式运行") { serverUrlOpt };
             runAsServerCommand.SetHandler(StartServer, serverUrlOpt);
             rootCommand.AddCommand(runAsServerCommand);
             rootCommand.Description = "BBDown是一个免费且便捷高效的哔哩哔哩下载/解析软件.";
@@ -101,13 +92,20 @@ namespace BBDown
             var parser = new CommandLineBuilder(rootCommand)
                 .UseDefaults()
                 .EnablePosixBundling(false)
-                .UseExceptionHandler((ex, context) =>
-                {
-                    LogError(ex.Message);
-                    try { Console.CursorVisible = true; } catch { }
-                    Thread.Sleep(3000);
-                    Environment.Exit(1);
-                }, 1)
+                .UseExceptionHandler(
+                    (ex, context) =>
+                    {
+                        LogError(ex.Message);
+                        try
+                        {
+                            Console.CursorVisible = true;
+                        }
+                        catch { }
+                        Thread.Sleep(3000);
+                        Environment.Exit(1);
+                    },
+                    1
+                )
                 .Build();
 
             var newArgsList = new List<string>();
@@ -123,7 +121,11 @@ namespace BBDown
                 return 1;
             }
 
-            if (commandLineResult.CommandResult.Command.Name.ToLower() != Path.GetFileNameWithoutExtension(Environment.ProcessPath)!.ToLower() && Path.GetFileNameWithoutExtension(Environment.ProcessPath)!.ToLower() != "dotnet")
+            if (
+                commandLineResult.CommandResult.Command.Name.ToLower()
+                    != Path.GetFileNameWithoutExtension(Environment.ProcessPath)!.ToLower()
+                && Path.GetFileNameWithoutExtension(Environment.ProcessPath)!.ToLower() != "dotnet"
+            )
             {
                 // 服务器模式需要完整的arg列表
                 if (commandLineResult.CommandResult.Command.Name.ToLower() == "serve")
@@ -183,9 +185,17 @@ namespace BBDown
             server.Run(string.IsNullOrEmpty(listenUrl) ? defaultListenUrl : listenUrl);
         }
 
-        public static (Dictionary<string, byte> encodingPriority, Dictionary<string, int> dfnPriority, string? firstEncoding,
-            bool downloadDanmaku, string input, string savePathFormat, string lang, string aidOri, int delay)
-        SetUpWork(MyOption myOption)
+        public static (
+            Dictionary<string, byte> encodingPriority,
+            Dictionary<string, int> dfnPriority,
+            string? firstEncoding,
+            bool downloadDanmaku,
+            string input,
+            string savePathFormat,
+            string lang,
+            string aidOri,
+            int delay
+        ) SetUpWork(MyOption myOption)
         {
             //处理废弃选项
             HandleDeprecatedOptions(myOption);
@@ -221,10 +231,24 @@ namespace BBDown
 
             LogDebug("AppDirectory: {0}", APP_DIR);
             LogDebug("运行参数：{0}", JsonSerializer.Serialize(myOption, MyOptionJsonContext.Default.MyOption));
-            return (encodingPriority, dfnPriority, firstEncoding, downloadDanmaku, input, savePathFormat, lang, aidOri, delay);
+            return (
+                encodingPriority,
+                dfnPriority,
+                firstEncoding,
+                downloadDanmaku,
+                input,
+                savePathFormat,
+                lang,
+                aidOri,
+                delay
+            );
         }
 
-        public static async Task<(string fetchedAid, VInfo vInfo, string apiType)> GetVideoInfoAsync(MyOption myOption, string aidOri, string input)
+        public static async Task<(string fetchedAid, VInfo vInfo, string apiType)> GetVideoInfoAsync(
+            MyOption myOption,
+            string aidOri,
+            string input
+        )
         {
             Log("检测账号登录...");
 
@@ -261,8 +285,10 @@ namespace BBDown
             }
             catch (KeyNotFoundException e)
             {
-                if (e.Message != "Arg_KeyNotFound") throw; // 错误消息不符合预期，抛出异常
-                if (aidOri.StartsWith("cheese:")) throw; // 已经按课程查找过，不再重复尝试
+                if (e.Message != "Arg_KeyNotFound")
+                    throw; // 错误消息不符合预期，抛出异常
+                if (aidOri.StartsWith("cheese:"))
+                    throw; // 已经按课程查找过，不再重复尝试
 
                 LogWarn("未找到此 EP/SS 对应番剧信息, 正在尝试按课程查找。");
 
@@ -297,7 +323,9 @@ namespace BBDown
                 Log("视频为互动视频，暂时不支持tv下载，修改为默认下载");
                 myOption.UseTvApi = false;
             }
-            string apiType = myOption.UseTvApi ? "TV" : (myOption.UseAppApi ? "APP" : (myOption.UseIntlApi ? "INTL" : "WEB"));
+            string apiType = myOption.UseTvApi
+                ? "TV"
+                : (myOption.UseAppApi ? "APP" : (myOption.UseIntlApi ? "INTL" : "WEB"));
 
             //打印分P信息
             List<Page> pagesInfo = vInfo.PagesInfo;
@@ -306,7 +334,8 @@ namespace BBDown
             {
                 if (!myOption.ShowAll)
                 {
-                    if (more && p.index != pagesInfo.Count) continue;
+                    if (more && p.index != pagesInfo.Count)
+                        continue;
                     if (!more && p.index > 5)
                     {
                         Log("......");
@@ -320,8 +349,21 @@ namespace BBDown
             return (aidOri, vInfo, apiType);
         }
 
-        public static async Task DownloadPagesAsync(MyOption myOption, VInfo vInfo, Dictionary<string, byte> encodingPriority, Dictionary<string, int> dfnPriority,
-            string? firstEncoding, bool downloadDanmaku, string input, string savePathFormat, string lang, string aidOri, int delay, string apiType, DownloadTask? relatedTask = null)
+        public static async Task DownloadPagesAsync(
+            MyOption myOption,
+            VInfo vInfo,
+            Dictionary<string, byte> encodingPriority,
+            Dictionary<string, int> dfnPriority,
+            string? firstEncoding,
+            bool downloadDanmaku,
+            string input,
+            string savePathFormat,
+            string lang,
+            string aidOri,
+            int delay,
+            string apiType,
+            DownloadTask? relatedTask = null
+        )
         {
             List<Page> pagesInfo = vInfo.PagesInfo;
             bool bangumi = vInfo.IsBangumi;
@@ -329,7 +371,10 @@ namespace BBDown
             //获取已选择的分P列表
             List<string>? selectedPages = GetSelectedPages(myOption, vInfo, input);
 
-            Log($"共计 {pagesInfo.Count} 个分P, 已选择：" + (selectedPages == null ? "ALL" : string.Join(",", selectedPages)));
+            Log(
+                $"共计 {pagesInfo.Count} 个分P, 已选择："
+                    + (selectedPages == null ? "ALL" : string.Join(",", selectedPages))
+            );
             var pagesCount = pagesInfo.Count;
 
             //过滤不需要的分P
@@ -339,11 +384,15 @@ namespace BBDown
             }
 
             // 根据p数选择存储路径
-            savePathFormat = string.IsNullOrEmpty(myOption.FilePattern) ? SinglePageDefaultSavePath : myOption.FilePattern;
+            savePathFormat = string.IsNullOrEmpty(myOption.FilePattern)
+                ? SinglePageDefaultSavePath
+                : myOption.FilePattern;
             // 1. 多P; 2. 只有1P, 但是是番剧, 尚未完结时 按照多P处理
             if (pagesCount > 1 || (bangumi && !vInfo.IsBangumiEnd))
             {
-                savePathFormat = string.IsNullOrEmpty(myOption.MultiFilePattern) ? MultiPageDefaultSavePath : myOption.MultiFilePattern;
+                savePathFormat = string.IsNullOrEmpty(myOption.MultiFilePattern)
+                    ? MultiPageDefaultSavePath
+                    : myOption.MultiFilePattern;
             }
 
             foreach (Page p in pagesInfo)
@@ -359,14 +408,27 @@ namespace BBDown
                 {
                     if (CheckAidFromFile(p.aid))
                     {
-
                         Log($"aid: {p.aid}已下载过, 跳过下载...");
                         continue;
                     }
                 }
 
-                await DownloadPageAsync(p, myOption, vInfo, pagesInfo, encodingPriority, dfnPriority, firstEncoding,
-                    downloadDanmaku, input, savePathFormat, lang, aidOri, apiType, relatedTask);
+                await DownloadPageAsync(
+                    p,
+                    myOption,
+                    vInfo,
+                    pagesInfo,
+                    encodingPriority,
+                    dfnPriority,
+                    firstEncoding,
+                    downloadDanmaku,
+                    input,
+                    savePathFormat,
+                    lang,
+                    aidOri,
+                    apiType,
+                    relatedTask
+                );
 
                 if (myOption.SaveArchivesToFile)
                 {
@@ -377,8 +439,22 @@ namespace BBDown
             Log("任务完成");
         }
 
-        private static async Task DownloadPageAsync(Page p, MyOption myOption, VInfo vInfo, List<Page> selectedPagesInfo, Dictionary<string, byte> encodingPriority, Dictionary<string, int> dfnPriority,
-            string? firstEncoding, bool downloadDanmaku, string input, string savePathFormat, string lang, string aidOri, string apiType, DownloadTask? relatedTask = null)
+        private static async Task DownloadPageAsync(
+            Page p,
+            MyOption myOption,
+            VInfo vInfo,
+            List<Page> selectedPagesInfo,
+            Dictionary<string, byte> encodingPriority,
+            Dictionary<string, int> dfnPriority,
+            string? firstEncoding,
+            bool downloadDanmaku,
+            string input,
+            string savePathFormat,
+            string lang,
+            string aidOri,
+            string apiType,
+            DownloadTask? relatedTask = null
+        )
         {
             string desc = string.IsNullOrEmpty(p.desc) ? vInfo.Desc : p.desc;
             bool bangumi = vInfo.IsBangumi;
@@ -389,7 +465,7 @@ namespace BBDown
             long pubTime = vInfo.PubTime;
             bool selected = false; //用户是否已经手动选择过了轨道
             int retryCount = 0;
-        downloadPage:
+            downloadPage:
             try
             {
                 LogDebug("尝试获取章节信息...");
@@ -400,9 +476,11 @@ namespace BBDown
                 var coverPath = $"{p.aid}/{p.aid}.jpg";
 
                 //处理文件夹以.结尾导致的异常情况
-                if (title.EndsWith(".")) title += "_fix";
+                if (title.EndsWith("."))
+                    title += "_fix";
                 //处理文件夹以.开头导致的异常情况
-                if (title.StartsWith(".")) title = "_" + title;
+                if (title.StartsWith("."))
+                    title = "_" + title;
 
                 //处理封面&&字幕
                 if (!myOption.OnlyShowInfo)
@@ -411,7 +489,13 @@ namespace BBDown
                     {
                         Directory.CreateDirectory(p.aid);
                     }
-                    if (!myOption.SkipCover && !myOption.SubOnly && !File.Exists(coverPath) && !myOption.DanmakuOnly && !myOption.CoverOnly)
+                    if (
+                        !myOption.SkipCover
+                        && !myOption.SubOnly
+                        && !File.Exists(coverPath)
+                        && !myOption.DanmakuOnly
+                        && !myOption.CoverOnly
+                    )
                     {
                         await DownloadFile((pic == "" ? p.cover! : pic), coverPath, new DownloadConfig());
                     }
@@ -419,7 +503,13 @@ namespace BBDown
                     if (!myOption.SkipSubtitle && !myOption.DanmakuOnly && !myOption.CoverOnly)
                     {
                         LogDebug("获取字幕...");
-                        subtitleInfo = await SubUtil.GetSubtitlesAsync(p.aid, p.cid, p.epid, p.index, myOption.UseIntlApi);
+                        subtitleInfo = await SubUtil.GetSubtitlesAsync(
+                            p.aid,
+                            p.cid,
+                            p.epid,
+                            p.index,
+                            myOption.UseIntlApi
+                        );
                         if (myOption.SkipAi && subtitleInfo.Any())
                         {
                             Log($"跳过下载AI字幕");
@@ -432,7 +522,16 @@ namespace BBDown
                             await SubUtil.SaveSubtitleAsync(s.url, s.path);
                             if (myOption.SubOnly && File.Exists(s.path) && File.ReadAllText(s.path) != "")
                             {
-                                var _outSubPath = FormatSavePath(savePathFormat, title, null, null, p, pagesCount, apiType, pubTime);
+                                var _outSubPath = FormatSavePath(
+                                    savePathFormat,
+                                    title,
+                                    null,
+                                    null,
+                                    p,
+                                    pagesCount,
+                                    apiType,
+                                    pubTime
+                                );
                                 if (_outSubPath.Contains('/'))
                                 {
                                     if (!Directory.Exists(_outSubPath.Split('/').First()))
@@ -446,13 +545,23 @@ namespace BBDown
 
                     if (myOption.SubOnly)
                     {
-                        if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0) Directory.Delete(p.aid, true);
+                        if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0)
+                            Directory.Delete(p.aid, true);
                         return;
                     }
                 }
 
                 //调用解析
-                ParsedResult parsedResult = await ExtractTracksAsync(aidOri, p.aid, p.cid, p.epid, myOption.UseTvApi, myOption.UseIntlApi, myOption.UseAppApi, firstEncoding);
+                ParsedResult parsedResult = await ExtractTracksAsync(
+                    aidOri,
+                    p.aid,
+                    p.cid,
+                    p.epid,
+                    myOption.UseTvApi,
+                    myOption.UseIntlApi,
+                    myOption.UseAppApi,
+                    firstEncoding
+                );
                 List<AudioMaterial> audioMaterial = new();
                 if (!p.points.Any())
                 {
@@ -476,17 +585,19 @@ namespace BBDown
                 };
 
                 //此处代码简直灾难, 后续优化吧
-                if ((parsedResult.VideoTracks.Any() || parsedResult.AudioTracks.Any()) && !parsedResult.Clips.Any())   //dash
+                if ((parsedResult.VideoTracks.Any() || parsedResult.AudioTracks.Any()) && !parsedResult.Clips.Any()) //dash
                 {
                     if (parsedResult.VideoTracks.Count == 0)
                     {
                         LogWarn("没有找到符合要求的视频流");
-                        if (myOption.VideoOnly) return;
+                        if (myOption.VideoOnly)
+                            return;
                     }
                     if (parsedResult.AudioTracks.Count == 0)
                     {
                         LogWarn("没有找到符合要求的音频流");
-                        if (myOption.AudioOnly) return;
+                        if (myOption.AudioOnly)
+                            return;
                     }
 
                     if (myOption.AudioOnly)
@@ -501,7 +612,12 @@ namespace BBDown
                     }
 
                     //排序
-                    parsedResult.VideoTracks = SortTracks(parsedResult.VideoTracks, dfnPriority, encodingPriority, myOption.VideoAscending);
+                    parsedResult.VideoTracks = SortTracks(
+                        parsedResult.VideoTracks,
+                        dfnPriority,
+                        encodingPriority,
+                        myOption.VideoAscending
+                    );
                     parsedResult.AudioTracks.Sort(Compare);
                     parsedResult.BackgroundAudioTracks.Sort(Compare);
                     foreach (var role in parsedResult.RoleAudioList)
@@ -545,7 +661,16 @@ namespace BBDown
                     Audio? selectedBackgroundAudio = parsedResult.BackgroundAudioTracks.ElementAtOrDefault(aIndex);
 
                     LogDebug("Format Before: " + savePathFormat);
-                    savePath = FormatSavePath(savePathFormat, title, selectedVideo, selectedAudio, p, pagesCount, apiType, pubTime);
+                    savePath = FormatSavePath(
+                        savePathFormat,
+                        title,
+                        selectedVideo,
+                        selectedAudio,
+                        p,
+                        pagesCount,
+                        apiType,
+                        pubTime
+                    );
                     LogDebug("Format After: " + savePath);
 
                     if (downloadDanmaku)
@@ -581,7 +706,8 @@ namespace BBDown
                         var coverUrl = pic == "" ? p.cover! : pic;
                         var newCoverPath = Path.ChangeExtension(savePath, Path.GetExtension(coverUrl));
                         await DownloadFile(coverUrl, newCoverPath, downloadConfig);
-                        if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0) Directory.Delete(p.aid, true);
+                        if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0)
+                            Directory.Delete(p.aid, true);
                         return;
                     }
 
@@ -630,7 +756,12 @@ namespace BBDown
                     {
                         var backgroundPath = $"{p.aid}/{p.aid}.{p.cid}.P{p.index}.back_ground.m4a";
                         Log($"开始下载P{p.index}背景配音...");
-                        await DownloadTrackAsync(selectedBackgroundAudio.baseUrl, backgroundPath, downloadConfig, video: false);
+                        await DownloadTrackAsync(
+                            selectedBackgroundAudio.baseUrl,
+                            backgroundPath,
+                            downloadConfig,
+                            video: false
+                        );
                         audioMaterial.Add(new AudioMaterial("背景音频", "", backgroundPath));
                     }
 
@@ -639,49 +770,89 @@ namespace BBDown
                         foreach (var role in parsedResult.RoleAudioList)
                         {
                             Log($"开始下载P{p.index}配音[{role.title}]...");
-                            await DownloadTrackAsync(role.audio[aIndex].baseUrl, role.path, downloadConfig, video: false);
+                            await DownloadTrackAsync(
+                                role.audio[aIndex].baseUrl,
+                                role.path,
+                                downloadConfig,
+                                video: false
+                            );
                             audioMaterial.Add(new AudioMaterial(role));
                         }
                     }
 
                     Log($"下载P{p.index}完毕");
-                    if (!parsedResult.VideoTracks.Any()) videoPath = "";
-                    if (!parsedResult.AudioTracks.Any()) audioPath = "";
-                    if (myOption.SkipMux) return;
+                    if (!parsedResult.VideoTracks.Any())
+                        videoPath = "";
+                    if (!parsedResult.AudioTracks.Any())
+                        audioPath = "";
+                    if (myOption.SkipMux)
+                        return;
                     Log($"开始合并音视频{(subtitleInfo.Any() ? "和字幕" : "")}...");
                     if (myOption.AudioOnly)
                         savePath = savePath[..^4] + ".m4a";
-                    int code = BBDownMuxer.MuxAV(myOption.UseMP4box, videoPath, audioPath, audioMaterial, savePath,
+                    int code = BBDownMuxer.MuxAV(
+                        myOption.UseMP4box,
+                        videoPath,
+                        audioPath,
+                        audioMaterial,
+                        savePath,
                         desc,
                         title,
                         p.ownerName ?? "",
                         (pagesCount > 1 || (bangumi && !vInfo.IsBangumiEnd)) ? p.title : "",
                         File.Exists(coverPath) ? coverPath : "",
                         lang,
-                        subtitleInfo, myOption.AudioOnly, myOption.VideoOnly, p.points, p.pubTime, myOption.SimplyMux);
+                        subtitleInfo,
+                        myOption.AudioOnly,
+                        myOption.VideoOnly,
+                        p.points,
+                        p.pubTime,
+                        myOption.SimplyMux
+                    );
                     if (code != 0 || !File.Exists(savePath) || new FileInfo(savePath).Length == 0)
                     {
-                        LogError("合并失败"); return;
+                        LogError("合并失败");
+                        return;
                     }
                     Log("清理临时文件...");
                     Thread.Sleep(200);
-                    if (parsedResult.VideoTracks.Any()) File.Delete(videoPath);
-                    if (parsedResult.AudioTracks.Any()) File.Delete(audioPath);
-                    if (p.points.Any()) File.Delete(Path.Combine(Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!, "chapters"));
-                    foreach (var s in subtitleInfo) File.Delete(s.path);
-                    foreach (var a in audioMaterial) File.Delete(a.path);
-                    if (selectedPagesInfo.Count == 1 || p.index == selectedPagesInfo.Last().index || p.aid != selectedPagesInfo.Last().aid)
+                    if (parsedResult.VideoTracks.Any())
+                        File.Delete(videoPath);
+                    if (parsedResult.AudioTracks.Any())
+                        File.Delete(audioPath);
+                    if (p.points.Any())
+                        File.Delete(
+                            Path.Combine(
+                                Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!,
+                                "chapters"
+                            )
+                        );
+                    foreach (var s in subtitleInfo)
+                        File.Delete(s.path);
+                    foreach (var a in audioMaterial)
+                        File.Delete(a.path);
+                    if (
+                        selectedPagesInfo.Count == 1
+                        || p.index == selectedPagesInfo.Last().index
+                        || p.aid != selectedPagesInfo.Last().aid
+                    )
                         File.Delete(coverPath);
-                    if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0) Directory.Delete(p.aid, true);
+                    if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0)
+                        Directory.Delete(p.aid, true);
                 }
-                else if (parsedResult.Clips.Any() && parsedResult.Dfns.Any())   //flv
+                else if (parsedResult.Clips.Any() && parsedResult.Dfns.Any()) //flv
                 {
                     bool flag = false;
                     var clips = parsedResult.Clips;
                     var dfns = parsedResult.Dfns;
-                reParse:
+                    reParse:
                     //排序
-                    parsedResult.VideoTracks = SortTracks(parsedResult.VideoTracks, dfnPriority, encodingPriority, myOption.VideoAscending);
+                    parsedResult.VideoTracks = SortTracks(
+                        parsedResult.VideoTracks,
+                        dfnPriority,
+                        encodingPriority,
+                        myOption.VideoAscending
+                    );
 
                     int vIndex = 0;
                     if (myOption.Interactive && !flag && !selected)
@@ -691,12 +862,24 @@ namespace BBDown
                         Log("请选择最想要的清晰度(输入序号): ", false);
                         Console.ForegroundColor = ConsoleColor.Cyan;
                         vIndex = Convert.ToInt32(Console.ReadLine());
-                        if (vIndex > dfns.Count || vIndex < 0) vIndex = 0;
+                        if (vIndex > dfns.Count || vIndex < 0)
+                            vIndex = 0;
                         Console.ResetColor();
                         //重新解析
                         parsedResult.VideoTracks.Clear();
-                        parsedResult = await ExtractTracksAsync(aidOri, p.aid, p.cid, p.epid, myOption.UseTvApi, myOption.UseIntlApi, myOption.UseAppApi, firstEncoding, dfns[vIndex]);
-                        if (!p.points.Any()) p.points = parsedResult.ExtraPoints;
+                        parsedResult = await ExtractTracksAsync(
+                            aidOri,
+                            p.aid,
+                            p.cid,
+                            p.epid,
+                            myOption.UseTvApi,
+                            myOption.UseIntlApi,
+                            myOption.UseAppApi,
+                            firstEncoding,
+                            dfns[vIndex]
+                        );
+                        if (!p.points.Any())
+                            p.points = parsedResult.ExtraPoints;
                         flag = true;
                         selected = true;
                         goto reParse;
@@ -706,14 +889,30 @@ namespace BBDown
                     int index = 0;
                     foreach (var v in parsedResult.VideoTracks)
                     {
-                        LogColor($"{index++}. [{v.dfn}] [{v.res}] [{v.codecs}] [{v.fps}] [~{v.size / 1024 / v.dur * 8:00} kbps] [{FormatFileSize(v.size)}]".Replace("[] ", ""), false);
+                        LogColor(
+                            $"{index++}. [{v.dfn}] [{v.res}] [{v.codecs}] [{v.fps}] [~{v.size / 1024 / v.dur * 8:00} kbps] [{FormatFileSize(v.size)}]".Replace(
+                                "[] ",
+                                ""
+                            ),
+                            false
+                        );
                         if (myOption.OnlyShowInfo)
                         {
                             clips.ForEach(Console.WriteLine);
                         }
                     }
-                    if (myOption.OnlyShowInfo) return;
-                    savePath = FormatSavePath(savePathFormat, title, parsedResult.VideoTracks.ElementAtOrDefault(vIndex), null, p, pagesCount, apiType, pubTime);
+                    if (myOption.OnlyShowInfo)
+                        return;
+                    savePath = FormatSavePath(
+                        savePathFormat,
+                        title,
+                        parsedResult.VideoTracks.ElementAtOrDefault(vIndex),
+                        null,
+                        p,
+                        pagesCount,
+                        apiType,
+                        pubTime
+                    );
                     if (File.Exists(savePath) && new FileInfo(savePath).Length != 0)
                     {
                         Log($"{savePath}已存在, 跳过下载...");
@@ -736,31 +935,58 @@ namespace BBDown
                     var files = GetFiles(Path.GetDirectoryName(videoPath)!, ".mp4");
                     videoPath = $"{p.aid}/{p.aid}.P{p.index}.{p.cid}.mp4";
                     BBDownMuxer.MergeFLV(files, videoPath);
-                    if (myOption.SkipMux) return;
+                    if (myOption.SkipMux)
+                        return;
                     Log($"开始混流视频{(subtitleInfo.Any() ? "和字幕" : "")}...");
                     if (myOption.AudioOnly)
                         savePath = savePath[..^4] + ".m4a";
-                    int code = BBDownMuxer.MuxAV(false, videoPath, "", audioMaterial, savePath,
+                    int code = BBDownMuxer.MuxAV(
+                        false,
+                        videoPath,
+                        "",
+                        audioMaterial,
+                        savePath,
                         desc,
                         title,
                         p.ownerName ?? "",
                         (pagesCount > 1 || (bangumi && !vInfo.IsBangumiEnd)) ? p.title : "",
                         File.Exists(coverPath) ? coverPath : "",
                         lang,
-                        subtitleInfo, myOption.AudioOnly, myOption.VideoOnly, p.points, p.pubTime, myOption.SimplyMux);
+                        subtitleInfo,
+                        myOption.AudioOnly,
+                        myOption.VideoOnly,
+                        p.points,
+                        p.pubTime,
+                        myOption.SimplyMux
+                    );
                     if (code != 0 || !File.Exists(savePath) || new FileInfo(savePath).Length == 0)
                     {
-                        LogError("合并失败"); return;
+                        LogError("合并失败");
+                        return;
                     }
                     Log("清理临时文件...");
                     Thread.Sleep(200);
-                    if (parsedResult.VideoTracks.Count != 0) File.Delete(videoPath);
-                    foreach (var s in subtitleInfo) File.Delete(s.path);
-                    foreach (var a in audioMaterial) File.Delete(a.path);
-                    if (p.points.Any()) File.Delete(Path.Combine(Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!, "chapters"));
-                    if (selectedPagesInfo.Count == 1 || p.index == selectedPagesInfo.Last().index || p.aid != selectedPagesInfo.Last().aid)
+                    if (parsedResult.VideoTracks.Count != 0)
+                        File.Delete(videoPath);
+                    foreach (var s in subtitleInfo)
+                        File.Delete(s.path);
+                    foreach (var a in audioMaterial)
+                        File.Delete(a.path);
+                    if (p.points.Any())
+                        File.Delete(
+                            Path.Combine(
+                                Path.GetDirectoryName(string.IsNullOrEmpty(videoPath) ? audioPath : videoPath)!,
+                                "chapters"
+                            )
+                        );
+                    if (
+                        selectedPagesInfo.Count == 1
+                        || p.index == selectedPagesInfo.Last().index
+                        || p.aid != selectedPagesInfo.Last().aid
+                    )
                         File.Delete(coverPath);
-                    if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0) Directory.Delete(p.aid, true);
+                    if (Directory.Exists(p.aid) && Directory.GetFiles(p.aid).Length == 0)
+                        Directory.Delete(p.aid, true);
                 }
                 else
                 {
@@ -775,7 +1001,8 @@ namespace BBDown
             }
             catch (Exception ex)
             {
-                if (++retryCount > 2) throw;
+                if (++retryCount > 2)
+                    throw;
                 LogError(ex.Message);
                 LogWarn("下载出现异常, 3秒后将进行自动重试...");
                 await Task.Delay(3000);
@@ -787,11 +1014,32 @@ namespace BBDown
         {
             try
             {
-                var (encodingPriority, dfnPriority, firstEncoding, downloadDanmaku,
-                    input, savePathFormat, lang, aidOri, delay) = SetUpWork(myOption);
+                var (
+                    encodingPriority,
+                    dfnPriority,
+                    firstEncoding,
+                    downloadDanmaku,
+                    input,
+                    savePathFormat,
+                    lang,
+                    aidOri,
+                    delay
+                ) = SetUpWork(myOption);
                 var (fetchedAid, vInfo, apiType) = await GetVideoInfoAsync(myOption, aidOri, input);
-                await DownloadPagesAsync(myOption, vInfo, encodingPriority, dfnPriority, firstEncoding, downloadDanmaku,
-                    input, savePathFormat, lang, fetchedAid, delay, apiType);
+                await DownloadPagesAsync(
+                    myOption,
+                    vInfo,
+                    encodingPriority,
+                    dfnPriority,
+                    firstEncoding,
+                    downloadDanmaku,
+                    input,
+                    savePathFormat,
+                    lang,
+                    fetchedAid,
+                    delay,
+                    apiType
+                );
             }
             catch (Exception e)
             {
@@ -806,10 +1054,19 @@ namespace BBDown
             }
         }
 
-        private static List<Video> SortTracks(List<Video> videoTracks, Dictionary<string, int> dfnPriority, Dictionary<string, byte> encodingPriority, bool videoAscending)
+        private static List<Video> SortTracks(
+            List<Video> videoTracks,
+            Dictionary<string, int> dfnPriority,
+            Dictionary<string, byte> encodingPriority,
+            bool videoAscending
+        )
         {
             //用户同时输入了自定义分辨率优先级和自定义编码优先级, 则根据输入顺序依次进行排序
-            return dfnPriority.Any() && encodingPriority.Any() && Environment.CommandLine.IndexOf("--encoding-priority") < Environment.CommandLine.IndexOf("--dfn-priority")
+            return
+                dfnPriority.Any()
+                && encodingPriority.Any()
+                && Environment.CommandLine.IndexOf("--encoding-priority")
+                    < Environment.CommandLine.IndexOf("--dfn-priority")
                 ? videoTracks
                     .OrderBy(v => encodingPriority.TryGetValue(v.codecs, out byte i) ? i : 100)
                     .ThenBy(v => dfnPriority.TryGetValue(v.dfn, out int i) ? i : 100)
@@ -824,7 +1081,16 @@ namespace BBDown
                     .ToList();
         }
 
-        private static string FormatSavePath(string savePathFormat, string title, Video? videoTrack, Audio? audioTrack, Page p, int pagesCount, string apiType, long pubTime)
+        private static string FormatSavePath(
+            string savePathFormat,
+            string title,
+            Video? videoTrack,
+            Audio? audioTrack,
+            Page p,
+            int pagesCount,
+            string apiType,
+            long pubTime
+        )
         {
             var result = savePathFormat.Replace('\\', '/');
             var regex = InfoRegex();
@@ -854,7 +1120,9 @@ namespace BBDown
                     "bvid" => p.bvid,
                     "aid" => p.aid,
                     "cid" => p.cid,
-                    "ownerName" => p.ownerName == null ? "" : GetValidFileName(p.ownerName, filterSlash: true).Trim().TrimEnd('.').Trim(),
+                    "ownerName" => p.ownerName == null
+                        ? ""
+                        : GetValidFileName(p.ownerName, filterSlash: true).Trim().TrimEnd('.').Trim(),
                     "ownerMid" => p.ownerMid ?? "",
                     "dfn" => videoTrack == null ? "" : videoTrack.dfn,
                     "res" => videoTrack == null ? "" : videoTrack.res,
@@ -866,11 +1134,14 @@ namespace BBDown
                     "publishDate" => FormatTimeStamp(pubTime, defaultDateFormat),
                     "videoDate" => FormatTimeStamp(p.pubTime, defaultDateFormat),
                     "apiType" => apiType,
-                    _ => $"<{key}>"
+                    _ => $"<{key}>",
                 };
                 result = result.Replace(m.Value, v);
             }
-            if (!result.EndsWith(".mp4")) { result += ".mp4"; }
+            if (!result.EndsWith(".mp4"))
+            {
+                result += ".mp4";
+            }
             return result;
         }
 

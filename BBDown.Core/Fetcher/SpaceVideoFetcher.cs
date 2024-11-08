@@ -1,9 +1,9 @@
-﻿using BBDown.Core.Entity;
-using System;
+﻿using System;
 using System.Text;
 using System.Text.Json;
-using static BBDown.Core.Util.HTTPUtil;
+using BBDown.Core.Entity;
 using static BBDown.Core.Logger;
+using static BBDown.Core.Util.HTTPUtil;
 
 namespace BBDown.Core.Fetcher
 {
@@ -14,20 +14,39 @@ namespace BBDown.Core.Fetcher
             id = id[4..];
             // using the live API can bypass w_rid
             string userInfoApi = $"https://api.live.bilibili.com/live_user/v1/Master/info?uid={id}";
-            string userName = GetValidFileName(JsonDocument.Parse(await GetWebSourceAsync(userInfoApi)).RootElement.GetProperty("data").GetProperty("info").GetProperty("uname").ToString(), ".", true);
+            string userName = GetValidFileName(
+                JsonDocument
+                    .Parse(await GetWebSourceAsync(userInfoApi))
+                    .RootElement.GetProperty("data")
+                    .GetProperty("info")
+                    .GetProperty("uname")
+                    .ToString(),
+                ".",
+                true
+            );
             List<string> urls = new();
             int pageSize = 50;
             int pageNumber = 1;
-            var api = Parser.WbiSign($"mid={id}&order=pubdate&pn={pageNumber}&ps={pageSize}&tid=0&wts={DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}");
+            var api = Parser.WbiSign(
+                $"mid={id}&order=pubdate&pn={pageNumber}&ps={pageSize}&tid=0&wts={DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}"
+            );
             api = $"https://api.bilibili.com/x/space/wbi/arc/search?{api}";
             string json = await GetWebSourceAsync(api);
             var infoJson = JsonDocument.Parse(json);
-            var pages = infoJson.RootElement.GetProperty("data").GetProperty("list").GetProperty("vlist").EnumerateArray();
+            var pages = infoJson
+                .RootElement.GetProperty("data")
+                .GetProperty("list")
+                .GetProperty("vlist")
+                .EnumerateArray();
             foreach (var page in pages)
             {
                 urls.Add($"https://www.bilibili.com/video/av{page.GetProperty("aid")}");
             }
-            int totalCount = infoJson.RootElement.GetProperty("data").GetProperty("page").GetProperty("count").GetInt32();
+            int totalCount = infoJson
+                .RootElement.GetProperty("data")
+                .GetProperty("page")
+                .GetProperty("count")
+                .GetInt32();
             int totalPage = (int)Math.Ceiling((double)totalCount / pageSize);
             while (pageNumber < totalPage)
             {
@@ -35,11 +54,15 @@ namespace BBDown.Core.Fetcher
                 urls.AddRange(await GetVideosByPageAsync(pageNumber, pageSize, id));
             }
             File.WriteAllText($"{userName}的投稿视频.txt", string.Join('\n', urls));
-            Log("目前下载器不支持下载用户的全部投稿视频，不过程序已经获取到了该用户的全部投稿视频地址，你可以自行使用批处理脚本等手段调用本程序进行批量下载。如在Windows系统你可以使用如下代码：");
+            Log(
+                "目前下载器不支持下载用户的全部投稿视频，不过程序已经获取到了该用户的全部投稿视频地址，你可以自行使用批处理脚本等手段调用本程序进行批量下载。如在Windows系统你可以使用如下代码："
+            );
             Console.WriteLine();
-            Console.WriteLine(@"@echo Off
+            Console.WriteLine(
+                @"@echo Off
 For /F %%a in (urls.txt) Do (BBDown.exe ""%%a"")
-pause");
+pause"
+            );
             Console.WriteLine();
             throw new Exception("暂不支持该功能");
         }
@@ -47,11 +70,17 @@ pause");
         static async Task<List<string>> GetVideosByPageAsync(int pageNumber, int pageSize, string mid)
         {
             List<string> urls = new();
-            var api = Parser.WbiSign($"mid={mid}&order=pubdate&pn={pageNumber}&ps={pageSize}&tid=0&wts={DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}");
+            var api = Parser.WbiSign(
+                $"mid={mid}&order=pubdate&pn={pageNumber}&ps={pageSize}&tid=0&wts={DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}"
+            );
             api = $"https://api.bilibili.com/x/space/wbi/arc/search?{api}";
             string json = await GetWebSourceAsync(api);
             var infoJson = JsonDocument.Parse(json);
-            var pages = infoJson.RootElement.GetProperty("data").GetProperty("list").GetProperty("vlist").EnumerateArray();
+            var pages = infoJson
+                .RootElement.GetProperty("data")
+                .GetProperty("list")
+                .GetProperty("vlist")
+                .EnumerateArray();
             foreach (var page in pages)
             {
                 urls.Add($"https://www.bilibili.com/video/av{page.GetProperty("aid")}");
